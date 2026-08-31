@@ -56,6 +56,7 @@ import helium314.keyboard.latin.utils.createToolbarKey
 import helium314.keyboard.latin.utils.dpToPx
 import helium314.keyboard.latin.utils.getCodeForToolbarKey
 import helium314.keyboard.latin.utils.getCodeForToolbarKeyLongClick
+import helium314.keyboard.latin.utils.getEnabledToolbarKeys
 import helium314.keyboard.latin.utils.getPinnedToolbarKeys
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.latin.utils.removeFirst
@@ -68,6 +69,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import helium314.keyboard.theme.ThemeAsset
+import helium314.keyboard.theme.VisualThemeManager
+import helium314.keyboard.theme.VisualThemeToolbarStyler
 
 @SuppressLint("InflateParams")
 class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int) :
@@ -88,6 +92,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val wordViews = ArrayList<TextView>()
     private val debugInfoViews = ArrayList<TextView>()
     private val dividerViews = ArrayList<View>()
+    private val visualTheme = VisualThemeManager.activeTheme(context)
+    private val hasDecoratedToolbar = visualTheme.hasCustomToolbar
 
     init {
         val inflater = LayoutInflater.from(context)
@@ -95,13 +101,18 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         moreSuggestionsContainer = inflater.inflate(R.layout.more_suggestions, null)
 
         val colors = Settings.getValues().mColors
-        setBackgroundResource(R.drawable.hu_tao_toolbar_background)
+        if (hasDecoratedToolbar) {
+            background = visualTheme.drawable(context, ThemeAsset.TOOLBAR_BACKGROUND)
+        } else {
+            colors.setBackground(this, ColorType.STRIP_BACKGROUND)
+        }
         repeat(SuggestedWords.MAX_SUGGESTIONS) {
             val word = TextView(context, null, R.attr.suggestionWordStyle)
             word.contentDescription = resources.getString(R.string.spoken_empty_suggestion)
             word.setOnClickListener(this)
             word.setOnLongClickListener(this)
-            word.setBackgroundColor(Color.TRANSPARENT)
+            if (hasDecoratedToolbar) word.setBackgroundColor(Color.TRANSPARENT)
+            else colors.setBackground(word, ColorType.STRIP_BACKGROUND)
             wordViews.add(word)
             val divider = inflater.inflate(R.layout.suggestion_divider, null)
             dividerViews.add(divider)
@@ -119,23 +130,50 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val toolbarContainer: View = findViewById(R.id.toolbar_container)
     private val pinnedKeys: ViewGroup = findViewById(R.id.pinned_keys)
     private val suggestionsStrip: ViewGroup = findViewById(R.id.suggestions_strip)
-    private val backpackKey = findViewById<ImageButton>(R.id.hu_tao_toolbar_backpack_key)
+    private val toolbarStartContainer = findViewById<View>(R.id.visual_theme_toolbar_start_container)
+    private val backpackKey = findViewById<ImageButton>(R.id.visual_theme_toolbar_start_key)
+    private val toolbarEndArt = findViewById<ImageView>(R.id.visual_theme_toolbar_end_art)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
-    private val huTaoSearchTag = Any()
-    private val defaultToolbarBackground: Drawable = Color.TRANSPARENT.toDrawable()
+    private val themeSearchTag = Any()
+    private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
+    private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
+    private var defaultToolbarBackground: Drawable = Color.TRANSPARENT.toDrawable()
     private val enabledToolKeyBackground = GradientDrawable()
     private var direction = 1 // 1 if LTR, -1 if RTL
 
     private val toolbarKeyLayoutParams = LinearLayout.LayoutParams(
-        56.dpToPx(resources),
+        if (hasDecoratedToolbar) 56.dpToPx(resources)
+        else resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_edge_key_width),
         LinearLayout.LayoutParams.MATCH_PARENT
     )
 
     init {
         val colors = Settings.getValues().mColors
 
-        backpackKey.setBackgroundColor(Color.TRANSPARENT)
-        toolbarExpandKey.setBackgroundColor(Color.TRANSPARENT)
+        if (hasDecoratedToolbar) {
+            backpackKey.setBackgroundColor(Color.TRANSPARENT)
+            backpackKey.setImageDrawable(VisualThemeToolbarStyler.stateDrawable(
+                visualTheme.drawable(context, ThemeAsset.TOOLBAR_START),
+                visualTheme.drawable(context, ThemeAsset.TOOLBAR_START_PRESSED),
+            ))
+            toolbarEndArt.setImageDrawable(
+                visualTheme.drawable(context, ThemeAsset.TOOLBAR_END),
+            )
+            toolbarExpandKey.setBackgroundColor(Color.TRANSPARENT)
+        } else {
+            toolbarStartContainer.isGone = true
+            toolbarEndArt.isGone = true
+            val toolbarHeight =
+                resources.getDimension(R.dimen.config_suggestions_strip_height).toInt()
+            (toolbarExpandKey.parent as View).layoutParams.width = toolbarHeight
+            toolbarExpandKey.layoutParams.height = toolbarHeight
+            toolbarExpandKey.layoutParams.width = toolbarHeight
+            toolbarExpandKey.translationY = 0f
+            colors.setBackground(toolbarExpandKey, ColorType.STRIP_BACKGROUND)
+            colors.setColor(toolbarExpandKey, ColorType.TOOL_BAR_EXPAND_KEY)
+            colors.setColor(toolbarExpandKey.background, ColorType.TOOL_BAR_EXPAND_KEY_BACKGROUND)
+            defaultToolbarBackground = toolbarExpandKey.background
+        }
 
         // background indicator for pinned keys
         val color = colors.get(ColorType.TOOL_BAR_KEY_ENABLED_BACKGROUND) or -0x1000000 // ignore alpha (in Java this is more readable 0xFF000000)
@@ -144,18 +182,19 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         enabledToolKeyBackground.gradientRadius = resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_height) / 2.1f
 
         val mToolbarMode = if (isGone) ToolbarMode.HIDDEN else Settings.getValues().mToolbarMode
-        if (mToolbarMode == ToolbarMode.TOOLBAR_KEYS || mToolbarMode == ToolbarMode.EXPANDABLE) {
+        if (mToolbarMode == ToolbarMode.TOOLBAR_KEYS ||
+            (hasDecoratedToolbar && mToolbarMode == ToolbarMode.EXPANDABLE)
+        ) {
             setToolbarVisibility(true)
         }
 
-        // The original bar has four fixed actions between its backpack and flower flourish.
-        val huTaoToolbarButtons = listOf(
-            createHuTaoToolbarKey(ToolbarKey.SETTINGS, R.drawable.hu_tao_toolbar_keyboard),
-            createHuTaoToolbarKey(ToolbarKey.SELECT_WORD, R.drawable.hu_tao_toolbar_cursor),
-            createHuTaoSearchKey(),
-            createHuTaoToolbarKey(ToolbarKey.EMOJI, R.drawable.hu_tao_toolbar_emoji),
-        )
-        for (button in huTaoToolbarButtons) {
+        val toolbarButtons = if (hasDecoratedToolbar) listOf(
+            createThemedToolbarKey(ToolbarKey.SETTINGS, ThemeAsset.TOOLBAR_KEYBOARD),
+            createThemedToolbarKey(ToolbarKey.SELECT_WORD, ThemeAsset.TOOLBAR_CURSOR),
+            createThemedSearchKey(),
+            createThemedToolbarKey(ToolbarKey.EMOJI, ThemeAsset.TOOLBAR_EMOJI),
+        ) else getEnabledToolbarKeys(context.prefs()).map { createToolbarKey(context, it) }
+        for (button in toolbarButtons) {
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
             toolbar.addView(button)
@@ -223,12 +262,19 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         }
         layoutDirection = newLayoutDirection
         suggestionsStrip.layoutDirection = newLayoutDirection
+        if (!hasDecoratedToolbar) {
+            toolbarExpandKey.scaleX =
+                (if (toolbarContainer.visibility != VISIBLE) 1f else -1f) * direction
+        }
     }
 
     fun setToolbarVisibility(toolbarVisible: Boolean) {
         pinnedKeys.isVisible = !toolbarVisible
         suggestionsStrip.isVisible = !toolbarVisible
         toolbarContainer.isVisible = toolbarVisible
+        if (!hasDecoratedToolbar) {
+            toolbarExpandKey.scaleX = (if (toolbarVisible) -1f else 1f) * direction
+        }
 
         if (DEBUG_SUGGESTIONS) {
             for (view in debugInfoViews) {
@@ -329,7 +375,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     override fun onClick(view: View) {
         AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
         val tag = view.tag
-        if (tag === huTaoSearchTag) {
+        if (tag === themeSearchTag) {
             listener.onCodeInput(Constants.CODE_ENTER, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false)
             return
         }
@@ -357,7 +403,7 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onLongClick(view: View): Boolean {
         AudioAndHapticFeedbackManager.getInstance().performHapticFeedback(this, HapticEvent.KEY_LONG_PRESS)
-        if (view.tag === huTaoSearchTag) return true
+        if (view.tag === themeSearchTag) return true
         if (view.tag is ToolbarKey) {
             onLongClickToolbarKey(view)
             return true
@@ -520,13 +566,22 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         val settingsValues = Settings.getValues()
 
         val toolbarIsExpandable = settingsValues.mToolbarMode == ToolbarMode.EXPANDABLE
-        backpackKey.setImageResource(R.drawable.hu_tao_toolbar_backpack_state)
-        backpackKey.clearColorFilter()
-        backpackKey.tag = ToolbarKey.CLIPBOARD
-        backpackKey.setOnClickListener(this)
-
-        toolbarExpandKey.clearColorFilter()
-        toolbarExpandKey.isVisible = toolbarIsExpandable
+        if (hasDecoratedToolbar) {
+            backpackKey.clearColorFilter()
+            backpackKey.tag = ToolbarKey.CLIPBOARD
+            backpackKey.setOnClickListener(this)
+            toolbarExpandKey.setImageDrawable(
+                visualTheme.drawable(context, ThemeAsset.TOOLBAR_EXPAND),
+            )
+            toolbarExpandKey.clearColorFilter()
+            toolbarExpandKey.isVisible = toolbarIsExpandable
+        } else if (settingsValues.mIncognitoModeEnabled) {
+            toolbarExpandKey.setImageDrawable(incognitoIcon)
+            toolbarExpandKey.isVisible = true
+        } else {
+            toolbarExpandKey.setImageDrawable(toolbarArrowIcon)
+            toolbarExpandKey.isVisible = toolbarIsExpandable
+        }
 
         toolbarExpandKey.setOnClickListener(if (!toolbarIsExpandable) null else this)
         pinnedKeys.visibility = suggestionsStrip.visibility
@@ -554,17 +609,26 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         view.setOnLongClickListener(this)
         (view.layoutParams as LinearLayout.LayoutParams).weight = 1f
         colors.setColor(view, ColorType.TOOL_BAR_KEY)
-        view.setBackgroundColor(Color.TRANSPARENT)
+        if (hasDecoratedToolbar) view.setBackgroundColor(Color.TRANSPARENT)
+        else colors.setBackground(view, ColorType.STRIP_BACKGROUND)
     }
 
-    private fun createHuTaoToolbarKey(key: ToolbarKey, icon: Int): ImageButton =
-        createToolbarKey(context, key).apply { setImageResource(icon) }
+    private fun createThemedToolbarKey(key: ToolbarKey, asset: String): ImageButton =
+        createToolbarKey(context, key).apply {
+            visualTheme.drawable(context, asset)?.let(::setImageDrawable)
+        }
 
-    private fun createHuTaoSearchKey() = ImageButton(context, null, R.attr.suggestionWordStyle).apply {
+    private fun createThemedSearchKey() = ImageButton(context, null, R.attr.suggestionWordStyle).apply {
         scaleType = ImageView.ScaleType.CENTER
-        tag = huTaoSearchTag
+        tag = themeSearchTag
         contentDescription = resources.getString(R.string.label_search_key)
-        setImageResource(R.drawable.hu_tao_toolbar_search)
+        setImageDrawable(
+            visualTheme.drawable(context, ThemeAsset.TOOLBAR_SEARCH)
+                ?: KeyboardIconsSet.instance.getNewDrawable(
+                    KeyboardIconsSet.NAME_SEARCH_KEY,
+                    context,
+                ),
+        )
     }
 
     companion object {

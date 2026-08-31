@@ -6,7 +6,6 @@ package helium314.keyboard.keyboard.internal;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
@@ -24,16 +23,14 @@ import java.util.Objects;
 
 import helium314.keyboard.keyboard.Key;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
-import helium314.keyboard.latin.R;
 import helium314.keyboard.latin.common.Constants;
+import helium314.keyboard.theme.KeyRendererConfig;
+import helium314.keyboard.theme.ResolvedVisualTheme;
+import helium314.keyboard.theme.ThemeAsset;
+import helium314.keyboard.theme.VisualThemeValidator;
 
-/** Draws the original Hu Tao key shapes without tinting or distorting their ornamentation. */
-public final class HuTaoKeyBackgroundRenderer {
-    private static final int NORMAL_HORIZONTAL_CAP = 20;
-    private static final int SPACE_LEFT_CAP = 45;
-    private static final int SPACE_RIGHT_CAP = 75;
-    private static final float KEY_HORIZONTAL_OVERSCAN = 0.07f;
-    private static final float KEY_VERTICAL_OVERSCAN = 0.03f;
+/** Draws keys from a validated visual theme without tinting or distorting its ornamentation. */
+public final class VisualThemeKeyRenderer {
 
     @NonNull
     private final Bitmap mNormalKey;
@@ -79,43 +76,89 @@ public final class HuTaoKeyBackgroundRenderer {
     private final Rect mSource = new Rect();
     @NonNull
     private final RectF mDestination = new RectF();
+    @NonNull
+    private final KeyRendererConfig mConfig;
+    private final int mGradientStart;
+    private final int mGradientEnd;
+    private final boolean mHasSpaceFrames;
+    private final boolean mHasShiftFrames;
+    private final boolean mHasDeleteFrames;
+    private final boolean mHasActionFrames;
+    private final boolean mHasRoundFunctionFrames;
+    private final boolean mHasDiamondFunctionFrames;
 
-    public HuTaoKeyBackgroundRenderer(@NonNull final Context context) {
-        this(context, false);
+    public VisualThemeKeyRenderer(@NonNull final Context context,
+            @NonNull final ResolvedVisualTheme theme) {
+        this(context, theme, false);
     }
 
-    public HuTaoKeyBackgroundRenderer(@NonNull final Context context,
+    public VisualThemeKeyRenderer(@NonNull final Context context,
+            @NonNull final ResolvedVisualTheme theme,
             final boolean opaqueRegularKeys) {
-        final Bitmap normalKey = BitmapFactory.decodeResource(
-                context.getResources(), R.drawable.hu_tao_key_normal);
-        final Bitmap pressedKey = BitmapFactory.decodeResource(
-                context.getResources(), R.drawable.hu_tao_key_pressed);
+        if (!theme.getHasCustomKeys()) {
+            throw new IllegalArgumentException("Theme does not provide custom keys");
+        }
+        mConfig = theme.getManifest().getKeyRenderer();
+        mHasSpaceFrames = hasPair(theme, ThemeAsset.SPACE_NORMAL, ThemeAsset.SPACE_PRESSED);
+        mHasShiftFrames = hasPair(theme, ThemeAsset.SHIFT_NORMAL, ThemeAsset.SHIFT_PRESSED);
+        mHasDeleteFrames = hasPair(theme, ThemeAsset.DELETE_NORMAL, ThemeAsset.DELETE_PRESSED);
+        mHasActionFrames = hasPair(theme, ThemeAsset.ACTION_NORMAL, ThemeAsset.ACTION_PRESSED);
+        mHasRoundFunctionFrames = hasPair(
+                theme, ThemeAsset.ROUND_FUNCTION_NORMAL, ThemeAsset.ROUND_FUNCTION_PRESSED);
+        mHasDiamondFunctionFrames = hasPair(
+                theme, ThemeAsset.DIAMOND_FUNCTION_NORMAL, ThemeAsset.DIAMOND_FUNCTION_PRESSED);
+        final Bitmap normalKey = Objects.requireNonNull(
+                theme.bitmap(context, ThemeAsset.KEY_NORMAL));
+        final Bitmap pressedKey = Objects.requireNonNull(
+                theme.bitmap(context, ThemeAsset.KEY_PRESSED));
         mNormalKey = opaqueRegularKeys ? makeSolidPixelsOpaque(normalKey) : normalKey;
         mPressedKey = opaqueRegularKeys ? makeSolidPixelsOpaque(pressedKey) : pressedKey;
-        mNormalSpace = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_space_normal);
-        mPressedSpace = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_space_pressed);
-        mNormalShift = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_shift_normal);
-        mPressedShift = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_shift_pressed);
-        mNormalDelete = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_delete_normal);
-        mPressedDelete = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_delete_pressed);
-        mNormalEnter = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_enter_normal);
-        mPressedEnter = BitmapFactory.decodeResource(context.getResources(), R.drawable.hu_tao_enter_pressed);
-        mNormalRoundFunction = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable.hu_tao_round_function_normal);
-        mPressedRoundFunction = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable.hu_tao_round_function_pressed);
-        mNormalDiamondFunction = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable.hu_tao_diamond_function_normal);
-        mPressedDiamondFunction = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable.hu_tao_diamond_function_pressed);
-        mBackspaceIcon = Objects.requireNonNull(
-                context.getDrawable(R.drawable.hu_tao_backspace_filled));
-        mReturnArrowIcon = Objects.requireNonNull(
-                context.getDrawable(R.drawable.hu_tao_return_arrow));
-        mSpaceGlyph = Objects.requireNonNull(
-                context.getDrawable(R.drawable.hu_tao_space_glyph));
-        mSpaceGlobeIcon = Objects.requireNonNull(
-                context.getDrawable(R.drawable.sym_keyboard_language_switch_lxx));
+        mNormalSpace = decodeBitmap(context, theme, ThemeAsset.SPACE_NORMAL, ThemeAsset.KEY_NORMAL);
+        mPressedSpace = decodeBitmap(context, theme, ThemeAsset.SPACE_PRESSED, ThemeAsset.KEY_PRESSED);
+        mNormalShift = decodeBitmap(context, theme, ThemeAsset.SHIFT_NORMAL, ThemeAsset.KEY_NORMAL);
+        mPressedShift = decodeBitmap(context, theme, ThemeAsset.SHIFT_PRESSED, ThemeAsset.KEY_PRESSED);
+        mNormalDelete = decodeBitmap(context, theme, ThemeAsset.DELETE_NORMAL, ThemeAsset.KEY_NORMAL);
+        mPressedDelete = decodeBitmap(context, theme, ThemeAsset.DELETE_PRESSED, ThemeAsset.KEY_PRESSED);
+        mNormalEnter = decodeBitmap(context, theme, ThemeAsset.ACTION_NORMAL, ThemeAsset.KEY_NORMAL);
+        mPressedEnter = decodeBitmap(context, theme, ThemeAsset.ACTION_PRESSED, ThemeAsset.KEY_PRESSED);
+        mNormalRoundFunction = Objects.requireNonNull(theme.bitmap(
+                context, ThemeAsset.ROUND_FUNCTION_NORMAL, ThemeAsset.KEY_NORMAL));
+        mPressedRoundFunction = Objects.requireNonNull(theme.bitmap(
+                context, ThemeAsset.ROUND_FUNCTION_PRESSED, ThemeAsset.KEY_PRESSED));
+        mNormalDiamondFunction = Objects.requireNonNull(theme.bitmap(
+                context, ThemeAsset.DIAMOND_FUNCTION_NORMAL, ThemeAsset.KEY_NORMAL));
+        mPressedDiamondFunction = Objects.requireNonNull(theme.bitmap(
+                context, ThemeAsset.DIAMOND_FUNCTION_PRESSED, ThemeAsset.KEY_PRESSED));
+        mBackspaceIcon = requireDrawable(context, theme, ThemeAsset.ICON_BACKSPACE);
+        mReturnArrowIcon = requireDrawable(context, theme, ThemeAsset.ICON_ACTION);
+        mSpaceGlyph = requireDrawable(context, theme, ThemeAsset.ICON_SPACE_GLYPH);
+        mSpaceGlobeIcon = requireDrawable(context, theme, ThemeAsset.ICON_SPACE_LANGUAGE);
+        mGradientStart = parseColor(mConfig.getIconGradientStart(), Color.WHITE);
+        mGradientEnd = parseColor(mConfig.getIconGradientEnd(), Color.WHITE);
+    }
+
+    @NonNull
+    private static Bitmap decodeBitmap(@NonNull final Context context,
+            @NonNull final ResolvedVisualTheme theme, @NonNull final String asset,
+            @NonNull final String fallbackAsset) {
+        return Objects.requireNonNull(theme.bitmap(context, asset, fallbackAsset));
+    }
+
+    @NonNull
+    private static Drawable requireDrawable(@NonNull final Context context,
+            @NonNull final ResolvedVisualTheme theme, @NonNull final String asset) {
+        final Drawable drawable = theme.drawable(context, asset);
+        if (drawable == null) throw new IllegalArgumentException("Theme is missing " + asset);
+        return drawable;
+    }
+
+    private static int parseColor(final String value, final int fallback) {
+        return value == null ? fallback : VisualThemeValidator.INSTANCE.parseColor(value);
+    }
+
+    private static boolean hasPair(@NonNull final ResolvedVisualTheme theme,
+            @NonNull final String normal, @NonNull final String pressed) {
+        return theme.hasAsset(normal) && theme.hasAsset(pressed);
     }
 
     /** Makes the key face fully opaque without flattening its translucent outer glow. */
@@ -140,32 +183,34 @@ public final class HuTaoKeyBackgroundRenderer {
         final boolean pressed = key.isPressedOrLocked();
         final boolean isSpace = code == Constants.CODE_SPACE;
         final float horizontalOverscan = isSpace
-                ? 0f : key.getDrawWidth() * KEY_HORIZONTAL_OVERSCAN;
-        final float verticalOverscan = key.getHeight() * KEY_VERTICAL_OVERSCAN;
+                ? 0f : key.getDrawWidth() * mConfig.getHorizontalOverscan();
+        final float verticalOverscan = key.getHeight() * mConfig.getVerticalOverscan();
         final int width = Math.round(key.getDrawWidth() + horizontalOverscan * 2f);
         final int height = Math.round(key.getHeight() + verticalOverscan * 2f);
 
         canvas.save();
         canvas.translate(-horizontalOverscan, -verticalOverscan);
 
-        if (isSpace) {
+        if (isSpace && mHasSpaceFrames) {
             drawHorizontallyStretchable(pressed ? mPressedSpace : mNormalSpace,
-                    canvas, width, height, SPACE_LEFT_CAP, SPACE_RIGHT_CAP);
-        } else if (key.isShift()) {
+                    canvas, width, height, mConfig.getSpaceLeftCapPx(),
+                    mConfig.getSpaceRightCapPx());
+        } else if (key.isShift() && mHasShiftFrames) {
             drawAspectFit(pressed ? mPressedShift : mNormalShift, canvas, width, height);
-        } else if (code == KeyCode.DELETE) {
+        } else if (code == KeyCode.DELETE && mHasDeleteFrames) {
             drawAspectFit(pressed ? mPressedDelete : mNormalDelete, canvas, width, height);
-        } else if (key.hasActionKeyBackground()) {
+        } else if (key.hasActionKeyBackground() && mHasActionFrames) {
             drawAspectFit(pressed ? mPressedEnter : mNormalEnter, canvas, width, height);
-        } else if (isRoundFunction(code)) {
+        } else if (isRoundFunction(code) && mHasRoundFunctionFrames) {
             drawAspectFit(pressed ? mPressedRoundFunction : mNormalRoundFunction,
                     canvas, width, height);
-        } else if (isDiamondFunction(code)) {
+        } else if (isDiamondFunction(code) && mHasDiamondFunctionFrames) {
             drawAspectFit(pressed ? mPressedDiamondFunction : mNormalDiamondFunction,
                     canvas, width, height);
         } else {
             drawHorizontallyStretchable(pressed ? mPressedKey : mNormalKey,
-                    canvas, width, height, NORMAL_HORIZONTAL_CAP);
+                    canvas, width, height, mConfig.getRegularLeftCapPx(),
+                    mConfig.getRegularRightCapPx());
         }
         canvas.restore();
     }
@@ -177,40 +222,40 @@ public final class HuTaoKeyBackgroundRenderer {
             return true;
         }
         if (key.getCode() == KeyCode.DELETE) {
-            drawSquareGradientIcon(key, canvas, mBackspaceIcon, 0.52f);
+            drawSquareGradientIcon(key, canvas, mBackspaceIcon,
+                    mConfig.getBackspaceIconSize());
             return true;
         }
         if (key.hasActionKeyBackground()) {
-            final int width = Math.round(Math.min(key.getDrawWidth(), key.getHeight()) * 0.62f);
-            final int height = Math.round(width * 66f / 80f);
-            // The original 80x66 PNG has transparent padding on its right and bottom. Center its
-            // visible 59x60 pixels rather than the full bitmap canvas.
+            final int width = Math.round(Math.min(key.getDrawWidth(), key.getHeight())
+                    * mConfig.getActionIconSize());
+            final int height = Math.round(width / mConfig.getActionIconAspectRatio());
             final int left = Math.round((key.getDrawWidth() - width) * 0.5f
-                    + width * 10.5f / 80f);
+                    + width * mConfig.getActionIconVisibleOffsetX());
             final int top = Math.round((key.getHeight() - height) * 0.5f
-                    + height * 3f / 66f);
+                    + height * mConfig.getActionIconVisibleOffsetY());
             drawOriginalIcon(canvas, mReturnArrowIcon, left, top, width, height);
             return true;
         }
-        return key.isShift();
+        return key.isShift() && mHasShiftFrames;
     }
 
     private void drawSpaceTopVisual(@NonNull final Key key, @NonNull final Canvas canvas) {
         final int keyWidth = key.getDrawWidth();
         final int keyHeight = key.getHeight();
 
-        final int globeSize = Math.round(keyHeight * 0.25f);
+        final int globeSize = Math.round(keyHeight * mConfig.getSpaceLanguageIconSize());
         final int globeLeft = (keyWidth - globeSize) / 2;
-        final int globeTop = Math.round(keyHeight * 0.20f);
+        final int globeTop = Math.round(keyHeight * mConfig.getSpaceLanguageIconTop());
         drawGradientIcon(canvas, mSpaceGlobeIcon,
                 globeLeft, globeTop, globeSize, globeSize);
 
-        final int glyphWidth = Math.round(keyWidth * 0.416f);
+        final int glyphWidth = Math.round(keyWidth * mConfig.getSpaceGlyphWidth());
         final int glyphHeight = Math.round(
                 glyphWidth * mSpaceGlyph.getIntrinsicHeight()
                         / (float) mSpaceGlyph.getIntrinsicWidth());
         final int glyphLeft = (keyWidth - glyphWidth) / 2;
-        final int glyphTop = Math.round(keyHeight * 0.58f);
+        final int glyphTop = Math.round(keyHeight * mConfig.getSpaceGlyphTop());
         drawOriginalIcon(canvas, mSpaceGlyph,
                 glyphLeft, glyphTop, glyphWidth, glyphHeight);
     }
@@ -235,7 +280,7 @@ public final class HuTaoKeyBackgroundRenderer {
         icon.draw(canvas);
 
         mIconPaint.setShader(new LinearGradient(left, top, right, top,
-                0xFFFFF4F3, 0xFFFFADA5, Shader.TileMode.CLAMP));
+                mGradientStart, mGradientEnd, Shader.TileMode.CLAMP));
         mIconPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_IN));
         canvas.drawRect(left, top, right, bottom, mIconPaint);
         mIconPaint.setXfermode(null);
@@ -278,11 +323,6 @@ public final class HuTaoKeyBackgroundRenderer {
      * Scales the frame vertically but stretches only its undecorated horizontal center. This is
      * effectively a three-patch and keeps the spacebar corners and gold trim in proportion.
      */
-    private void drawHorizontallyStretchable(@NonNull final Bitmap bitmap,
-            @NonNull final Canvas canvas, final int width, final int height, final int sourceCap) {
-        drawHorizontallyStretchable(bitmap, canvas, width, height, sourceCap, sourceCap);
-    }
-
     private void drawHorizontallyStretchable(@NonNull final Bitmap bitmap,
             @NonNull final Canvas canvas, final int width, final int height,
             final int sourceLeftCap, final int sourceRightCap) {

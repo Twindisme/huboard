@@ -1,41 +1,44 @@
-# Hu Tao Board
+# HeliBoard Theme Engine
 
-Hu Tao Board is an unofficial Hu Tao-themed Android keyboard based on
-[HeliBoard](https://github.com/HeliBorg/HeliBoard). It recreates the look and feel of the
-OnePlus Ace Pro Hu Tao Edition keyboard while keeping HeliBoard's practical features and
-customizability.
+An experimental [HeliBoard](https://github.com/HeliBorg/HeliBoard) fork with installable visual
+theme packs. It turns the Hu Tao keyboard work into a reusable engine: themes can replace key
+frames, pressed states, special-key shapes, key previews, keypress animations, the keyboard
+wallpaper, toolbar artwork, and clipboard suggestion chrome without adding executable code.
 
-[![Download the latest APK](https://img.shields.io/badge/Download-Latest%20APK-8f2938?style=for-the-badge&logo=android&logoColor=white)](https://github.com/Twindisme/HuTaoBoard/releases/latest/download/HuTaoBoard-latest.apk)
+The existing Hu Tao design is the first bundled reference theme. A Classic HeliBoard pack is
+included as a safe fallback.
 
-## Features
+## Current theme workflow
 
-- Hu Tao keycaps, special key shapes, spacebar, toolbar, and background artwork
-- Themed key previews, long-press panels, clipboard suggestions, and butterfly effects
-- Suggestions, multilingual typing, clipboard history, emoji, and HeliBoard customization
-- Built-in update checking and verified downloads from GitHub Releases
-- No advertisements, analytics, or telemetry
+1. Open **Settings → Appearance → Import visual theme** and choose a `.hbtheme` file.
+2. Choose any installed pack under **Visual theme**. The keyboard reloads immediately.
+3. Use **Remove visual theme** to delete an imported pack. Bundled packs cannot be removed.
 
-## Installation
+Theme packs are ZIP archives containing `manifest.json` and PNG/WebP files under `assets/`.
+They cannot contain code, XML, fonts, or arbitrary files. Imports enforce path, file-count,
+archive-size, image-dimension, schema, and asset-reference limits.
 
-1. Download the latest APK using the button above.
-2. Allow your browser to install unknown apps if Android asks.
-3. Install Hu Tao Board, then enable and select it in Android's keyboard settings.
+See [the theme-pack guide](docs/theme-packs/README.md) and
+[the JSON schema](docs/theme-packs/manifest.schema.json) to make a pack. The repository also has a
+small packaging helper:
 
-If an early test build is already installed and Android reports a signature conflict, back up its
-settings, uninstall it, and install the release APK. Releases use a consistent signing key, so later
-versions can update normally.
+```sh
+tools/package-hbtheme.sh path/to/theme-directory output/theme-name.hbtheme
+```
 
-## Network access
+## Development status
 
-Unlike upstream HeliBoard, Hu Tao Board requests internet access for its built-in updater. It only
-contacts this repository's GitHub Releases to check for and download updates. Downloaded APKs are
-verified against the release's SHA-256 checksum before Android's installer is opened.
+The engine is intentionally schema-versioned and starts conservatively with raster assets. The
+next useful extensions are an in-app preview/gallery, pack export, optional per-pack color
+presets, and more configurable toolbar geometry.
+
+This branch still uses the Hu Tao Board application identity and updater while the theme engine is
+being separated and tested. Do not publish it as a replacement for the existing Hu Tao Board app
+without choosing a new application ID, signing key, update feed, and project branding.
 
 ## Credits and license
 
-Hu Tao Board is based on [HeliBoard](https://github.com/HeliBorg/HeliBoard), which is based on
-OpenBoard and the AOSP LatinIME keyboard. The source code remains available under the
-[GNU General Public License v3.0](LICENSE).
-
-This is an unofficial fan project and is not affiliated with or endorsed by HoYoverse, OnePlus, or
-their respective rights holders. Hu Tao and related artwork belong to their respective owners.
+This project preserves the HeliBoard/OpenBoard/AOSP history and is licensed under the
+[GNU General Public License v3.0](LICENSE). The bundled Hu Tao theme is an unofficial fan work and
+is not affiliated with or endorsed by HoYoverse or OnePlus. Character and product artwork belongs
+to its respective rights holders.

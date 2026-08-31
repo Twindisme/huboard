@@ -6,7 +6,6 @@ package helium314.keyboard.keyboard.internal;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -20,47 +19,12 @@ import java.util.Iterator;
 
 import helium314.keyboard.keyboard.Key;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
-import helium314.keyboard.latin.R;
 import helium314.keyboard.latin.common.Constants;
+import helium314.keyboard.theme.KeyPressAnimationConfig;
+import helium314.keyboard.theme.ResolvedVisualTheme;
 
-/** Draws the original OnePlus Ace Pro Hu Tao butterfly frames over pressed keys. */
-public final class HuTaoButterflyAnimator {
-    private static final long FRAME_DURATION_MILLIS = 24L;
-    private static final int MAX_SIMULTANEOUS_EFFECTS = 8;
-    private static final float EFFECT_HEIGHT_TO_KEY_HEIGHT = 1.20f;
-
-    private static final int[] FRAME_RESOURCES = {
-            R.drawable.hu_tao_butterfly_00,
-            R.drawable.hu_tao_butterfly_01,
-            R.drawable.hu_tao_butterfly_02,
-            R.drawable.hu_tao_butterfly_03,
-            R.drawable.hu_tao_butterfly_04,
-            R.drawable.hu_tao_butterfly_05,
-            R.drawable.hu_tao_butterfly_06,
-            R.drawable.hu_tao_butterfly_07,
-            R.drawable.hu_tao_butterfly_08,
-            R.drawable.hu_tao_butterfly_09,
-            R.drawable.hu_tao_butterfly_10,
-            R.drawable.hu_tao_butterfly_11,
-            R.drawable.hu_tao_butterfly_12,
-            R.drawable.hu_tao_butterfly_13,
-            R.drawable.hu_tao_butterfly_14,
-            R.drawable.hu_tao_butterfly_15,
-            R.drawable.hu_tao_butterfly_16,
-            R.drawable.hu_tao_butterfly_17,
-            R.drawable.hu_tao_butterfly_18,
-            R.drawable.hu_tao_butterfly_19,
-            R.drawable.hu_tao_butterfly_20,
-            R.drawable.hu_tao_butterfly_21,
-            R.drawable.hu_tao_butterfly_22,
-            R.drawable.hu_tao_butterfly_23,
-            R.drawable.hu_tao_butterfly_24,
-            R.drawable.hu_tao_butterfly_25,
-            R.drawable.hu_tao_butterfly_26,
-            R.drawable.hu_tao_butterfly_27,
-            R.drawable.hu_tao_butterfly_28,
-            R.drawable.hu_tao_butterfly_29,
-    };
+/** Draws a theme's frame animation over pressed keys. */
+public final class VisualThemeKeyPressAnimator {
 
     @NonNull
     private final Bitmap[] mFrames;
@@ -70,24 +34,37 @@ public final class HuTaoButterflyAnimator {
     private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     @NonNull
     private final RectF mDestination = new RectF();
+    @NonNull
+    private final KeyPressAnimationConfig mConfig;
 
-    public HuTaoButterflyAnimator(@NonNull final Context context) {
-        mFrames = new Bitmap[FRAME_RESOURCES.length];
-        for (int index = 0; index < FRAME_RESOURCES.length; index++) {
-            mFrames[index] = BitmapFactory.decodeResource(context.getResources(), FRAME_RESOURCES[index]);
+    public VisualThemeKeyPressAnimator(@NonNull final Context context,
+            @NonNull final ResolvedVisualTheme theme) {
+        if (!theme.getHasKeyPressAnimation()) {
+            throw new IllegalArgumentException("Theme does not provide a key press animation");
+        }
+        mConfig = theme.getManifest().getKeyPressAnimation();
+        if (mConfig == null) {
+            throw new IllegalArgumentException("Theme has no key press animation config");
+        }
+        mFrames = new Bitmap[mConfig.getFrames().size()];
+        for (int index = 0; index < mFrames.length; index++) {
+            mFrames[index] = theme.bitmap(context, mConfig.getFrames().get(index));
+            if (mFrames[index] == null) {
+                throw new IllegalArgumentException("Theme animation frame could not be decoded");
+            }
         }
     }
 
     public void start(@NonNull final Key key, final int paddingLeft, final int paddingTop) {
-        if (!isVisibleCharacterKey(key)) {
+        if (mConfig.getCharacterKeysOnly() && !isVisibleCharacterKey(key)) {
             return;
         }
-        if (mEffects.size() == MAX_SIMULTANEOUS_EFFECTS) {
+        if (mEffects.size() == mConfig.getMaxSimultaneousEffects()) {
             mEffects.remove(0);
         }
         final float centerX = paddingLeft + key.getDrawX() + key.getDrawWidth() * 0.5f;
         final float centerY = paddingTop + key.getY() + key.getHeight() * 0.5f;
-        final float height = key.getHeight() * EFFECT_HEIGHT_TO_KEY_HEIGHT;
+        final float height = key.getHeight() * mConfig.getHeightToKeyHeight();
         final Bitmap firstFrame = mFrames[0];
         final float width = height * firstFrame.getWidth() / firstFrame.getHeight();
         mEffects.add(new Effect(centerX, centerY, width, height, SystemClock.uptimeMillis()));
@@ -116,7 +93,8 @@ public final class HuTaoButterflyAnimator {
         final Iterator<Effect> iterator = mEffects.iterator();
         while (iterator.hasNext()) {
             final Effect effect = iterator.next();
-            final int frameIndex = (int) ((now - effect.startTime) / FRAME_DURATION_MILLIS);
+            final int frameIndex = (int) ((now - effect.startTime)
+                    / mConfig.getFrameDurationMs());
             if (frameIndex >= mFrames.length) {
                 iterator.remove();
                 continue;

@@ -2,7 +2,6 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="horizontal"
-    android:background="@drawable/hu_tao_clipboard_suggestion_background"
     android:gravity="center_vertical"
     android:paddingStart="11dp"
     android:paddingEnd="8dp"
@@ -22,7 +21,6 @@
         android:singleLine="true"
         android:gravity="center_vertical"
         android:ellipsize="end"
-        android:textColor="#FFF0DB"
         android:textSize="15sp"
         style="?android:attr/textAppearanceSmall" />
     <ImageView
@@ -36,10 +34,11 @@
         android:visibility="gone"
         android:scaleType="centerInside" />
     <View
+        android:id="@+id/clipboard_suggestion_divider"
         android:layout_width="1dp"
         android:layout_height="22dp"
         android:layout_marginHorizontal="2dp"
-        android:background="#55D5AA76" />
+        />
     <ImageView
         android:id="@+id/clipboard_suggestion_close"
         android:contentDescription="@string/close_history"

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "id": "classic",
+  "displayName": "Classic HeliBoard",
+  "author": "HeliBoard contributors",
+  "description": "Uses HeliBoard's standard rendering with the currently selected color palette."
+}

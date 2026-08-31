@@ -54,6 +54,7 @@ public final class Settings implements SharedPreferences.OnSharedPreferenceChang
     private static final String TAG = Settings.class.getSimpleName();
 
     // theme-related stuff
+    public static final String PREF_VISUAL_THEME_PACK = "visual_theme_pack";
     public static final String PREF_THEME_STYLE = "theme_style";
     public static final String PREF_ICON_STYLE = "icon_style";
     public static final String PREF_THEME_COLORS = "theme_colors";

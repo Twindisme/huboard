@@ -37,8 +37,8 @@ import helium314.keyboard.keyboard.internal.DrawingPreviewPlacerView;
 import helium314.keyboard.keyboard.internal.DrawingProxy;
 import helium314.keyboard.keyboard.internal.GestureFloatingTextDrawingPreview;
 import helium314.keyboard.keyboard.internal.GestureTrailsDrawingPreview;
-import helium314.keyboard.keyboard.internal.HuTaoButterflyAnimator;
-import helium314.keyboard.keyboard.internal.HuTaoKeyBackgroundRenderer;
+import helium314.keyboard.keyboard.internal.VisualThemeKeyPressAnimator;
+import helium314.keyboard.keyboard.internal.VisualThemeKeyRenderer;
 import helium314.keyboard.keyboard.internal.KeyDrawParams;
 import helium314.keyboard.keyboard.internal.KeyPreviewChoreographer;
 import helium314.keyboard.keyboard.internal.KeyPreviewDrawParams;
@@ -63,6 +63,8 @@ import helium314.keyboard.latin.utils.KtxKt;
 import helium314.keyboard.latin.utils.LanguageOnSpacebarUtils;
 import helium314.keyboard.latin.utils.Log;
 import helium314.keyboard.latin.utils.TypefaceUtils;
+import helium314.keyboard.theme.ResolvedVisualTheme;
+import helium314.keyboard.theme.VisualThemeManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -131,8 +133,10 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     private final int mLanguageOnSpacebarHorizontalMargin;
 
     private MainKeyboardAccessibilityDelegate mAccessibilityDelegate;
-    private final HuTaoButterflyAnimator mHuTaoButterflyAnimator;
-    private final HuTaoKeyBackgroundRenderer mHuTaoKeyBackgroundRenderer;
+    @Nullable
+    private final VisualThemeKeyPressAnimator mVisualThemeKeyPressAnimator;
+    @Nullable
+    private final VisualThemeKeyRenderer mVisualThemeKeyRenderer;
 
     public MainKeyboardView(final Context context, final AttributeSet attrs) {
         this(context, attrs, R.attr.mainKeyboardViewStyle);
@@ -140,8 +144,11 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
 
     public MainKeyboardView(final Context context, final AttributeSet attrs, final int defStyle) {
         super(context, attrs, defStyle);
-        mHuTaoButterflyAnimator = new HuTaoButterflyAnimator(context);
-        mHuTaoKeyBackgroundRenderer = new HuTaoKeyBackgroundRenderer(context);
+        final ResolvedVisualTheme visualTheme = VisualThemeManager.activeTheme(context);
+        mVisualThemeKeyPressAnimator = visualTheme.getHasKeyPressAnimation()
+                ? new VisualThemeKeyPressAnimator(context, visualTheme) : null;
+        mVisualThemeKeyRenderer = visualTheme.getHasCustomKeys()
+                ? new VisualThemeKeyRenderer(context, visualTheme) : null;
 
         final DrawingPreviewPlacerView drawingPreviewPlacerView =
                 new DrawingPreviewPlacerView(new ContextThemeWrapper(context, R.style.platformActivityTheme), attrs);
@@ -193,7 +200,8 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
                 R.styleable.MainKeyboardView_altCodeKeyWhileTypingFadeinAnimator, 0);
 
         mKeyPreviewDrawParams = new KeyPreviewDrawParams(mainKeyboardViewAttr);
-        mKeyPreviewChoreographer = new KeyPreviewChoreographer(mKeyPreviewDrawParams);
+        mKeyPreviewChoreographer = new KeyPreviewChoreographer(
+                context, mKeyPreviewDrawParams, visualTheme);
 
         final int popupKeysKeyboardLayoutId = mainKeyboardViewAttr.getResourceId(
                 R.styleable.MainKeyboardView_popupKeysKeyboardLayout, 0);
@@ -371,8 +379,10 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     public void onKeyPressed(@NonNull final Key key, final boolean withPreview) {
         key.onPressed();
         invalidateKey(key);
-        mHuTaoButterflyAnimator.start(key, getPaddingLeft(), getPaddingTop());
-        postInvalidateOnAnimation();
+        if (mVisualThemeKeyPressAnimator != null) {
+            mVisualThemeKeyPressAnimator.start(key, getPaddingLeft(), getPaddingTop());
+            postInvalidateOnAnimation();
+        }
 
         final Keyboard keyboard = getKeyboard();
         if (keyboard == null) {
@@ -485,14 +495,17 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        mHuTaoButterflyAnimator.clear();
+        if (mVisualThemeKeyPressAnimator != null) {
+            mVisualThemeKeyPressAnimator.clear();
+        }
         mDrawingPreviewPlacerView.removeAllViews();
     }
 
     @Override
     protected void onDraw(@NonNull final Canvas canvas) {
         super.onDraw(canvas);
-        if (mHuTaoButterflyAnimator.draw(canvas, SystemClock.uptimeMillis())) {
+        if (mVisualThemeKeyPressAnimator != null
+                && mVisualThemeKeyPressAnimator.draw(canvas, SystemClock.uptimeMillis())) {
             postInvalidateOnAnimation();
         }
     }
@@ -740,13 +753,18 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     @Override
     protected void onDrawKeyBackground(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Drawable background) {
-        mHuTaoKeyBackgroundRenderer.draw(key, canvas);
+        if (mVisualThemeKeyRenderer == null) {
+            super.onDrawKeyBackground(key, canvas, background);
+        } else {
+            mVisualThemeKeyRenderer.draw(key, canvas);
+        }
     }
 
     @Override
     protected void onDrawKeyTopVisuals(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Paint paint, @NonNull final KeyDrawParams params) {
-        if (mHuTaoKeyBackgroundRenderer.drawTopVisual(key, canvas)) {
+        if (mVisualThemeKeyRenderer != null
+                && mVisualThemeKeyRenderer.drawTopVisual(key, canvas)) {
             return;
         }
         if (key.altCodeWhileTyping() && key.isEnabled()) {
@@ -771,7 +789,11 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     @Override
     protected void drawIcon(@NonNull final Canvas canvas, @NonNull final Drawable icon,
             final int x, final int y, final int width, final int height) {
-        mHuTaoKeyBackgroundRenderer.drawGradientIcon(canvas, icon, x, y, width, height);
+        if (mVisualThemeKeyRenderer == null) {
+            super.drawIcon(canvas, icon, x, y, width, height);
+        } else {
+            mVisualThemeKeyRenderer.drawGradientIcon(canvas, icon, x, y, width, height);
+        }
     }
 
     private boolean fitsTextIntoWidth(final int width, final String text, final Paint paint) {

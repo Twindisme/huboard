@@ -18,11 +18,13 @@ import androidx.core.view.inputmethod.InputContentInfoCompat
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import helium314.keyboard.keyboard.KeyboardTypeface
+import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.compat.ClipboardManagerCompat
 import helium314.keyboard.event.Event
 import helium314.keyboard.event.HapticEvent
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode
 import helium314.keyboard.latin.common.Constants
+import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.common.isValidNumber
 import helium314.keyboard.latin.database.ClipboardDao
 import helium314.keyboard.latin.databinding.ClipboardSuggestionBinding
@@ -30,7 +32,10 @@ import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.InputTypeUtils
 import helium314.keyboard.latin.utils.Log
+import helium314.keyboard.latin.utils.ToolbarKey
 import helium314.keyboard.latin.utils.prefs
+import helium314.keyboard.theme.ThemeAsset
+import helium314.keyboard.theme.VisualThemeManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -186,8 +191,28 @@ class ClipboardHistoryManager(
 
         // create the view
         val binding = ClipboardSuggestionBinding.inflate(LayoutInflater.from(latinIME), parent, false)
+        val visualTheme = VisualThemeManager.activeTheme(latinIME)
+        val colors = Settings.getValues().mColors
+        if (visualTheme.hasCustomClipboard) {
+            binding.root.background = visualTheme.drawable(
+                latinIME,
+                ThemeAsset.CLIPBOARD_SUGGESTION_BACKGROUND,
+            )
+        } else {
+            colors.setBackground(binding.root, ColorType.STRIP_BACKGROUND)
+        }
         val textView = binding.clipboardSuggestionText
-        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.hu_tao_clipboard_paste, 0, 0, 0)
+        val pasteIcon = if (visualTheme.hasCustomClipboard) {
+            visualTheme.drawable(latinIME, ThemeAsset.CLIPBOARD_PASTE)
+                ?: KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.PASTE.name, latinIME)
+        } else {
+            KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.PASTE.name, latinIME)
+        }
+        textView.setCompoundDrawablesRelativeWithIntrinsicBounds(pasteIcon, null, null, null)
+        textView.setTextColor(colors.get(ColorType.SUGGESTED_WORD))
+        binding.clipboardSuggestionDivider.setBackgroundColor(
+            colors.get(ColorType.SUGGESTED_WORD) and 0x55FFFFFF,
+        )
         val inputType = editorInfo?.inputType ?: InputType.TYPE_NULL
         if (hasText) {
             if (TextUtils.isEmpty(content)) return null
@@ -218,7 +243,13 @@ class ClipboardHistoryManager(
         }
 
         val closeButton = binding.clipboardSuggestionClose
-        closeButton.setImageResource(R.drawable.hu_tao_clipboard_close)
+        closeButton.setImageDrawable(if (visualTheme.hasCustomClipboard) {
+            visualTheme.drawable(latinIME, ThemeAsset.CLIPBOARD_CLOSE)
+                ?: KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.CLOSE_HISTORY.name, latinIME)
+        } else {
+            KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.CLOSE_HISTORY.name, latinIME)
+        })
+        colors.setColor(closeButton, ColorType.TOOL_BAR_KEY)
         closeButton.setOnClickListener { removeClipboardSuggestion() }
 
         clipboardSuggestionView = binding.root

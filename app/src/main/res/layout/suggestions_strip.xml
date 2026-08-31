@@ -18,11 +18,12 @@
         <!-- Provide audio and haptic feedback by ourselves based on the keyboard settings.
              We just need to ignore the system's audio and haptic feedback settings. -->
         <FrameLayout
+            android:id="@+id/visual_theme_toolbar_start_container"
             android:layout_width="61dp"
             android:layout_height="match_parent"
             android:translationY="-3dp">
             <ImageButton
-                android:id="@+id/hu_tao_toolbar_backpack_key"
+                android:id="@+id/visual_theme_toolbar_start_key"
                 android:layout_width="48dp"
                 android:layout_height="match_parent"
                 android:layout_gravity="center"
@@ -77,13 +78,13 @@
             android:layout_width="61dp"
             android:layout_height="match_parent">
             <ImageView
+                android:id="@+id/visual_theme_toolbar_end_art"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:contentDescription="@null"
                 android:importantForAccessibility="no"
                 android:scaleY="1.1"
                 android:scaleType="fitCenter"
-                android:src="@drawable/hu_tao_toolbar_flourish"
                 android:translationX="-4dp"
                 android:translationY="-3.13dp"
                 android:transformPivotY="0dp" />

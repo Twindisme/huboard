@@ -40,11 +40,14 @@ import helium314.keyboard.settings.preferences.BackgroundImagePref
 import helium314.keyboard.settings.preferences.CustomFontPreference
 import helium314.keyboard.settings.preferences.KeyboardScalePreference
 import helium314.keyboard.settings.preferences.TextInputPreference
+import helium314.keyboard.settings.preferences.VisualThemeImportPreference
+import helium314.keyboard.settings.preferences.VisualThemeDeletePreference
 import helium314.keyboard.latin.utils.previewDark
 import androidx.core.content.edit
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.FoldableUtils
 import helium314.keyboard.settings.dialogs.ThreeButtonAlertDialog
+import helium314.keyboard.theme.VisualThemeManager
 
 @Composable
 fun AppearanceScreen(
@@ -58,6 +61,9 @@ fun AppearanceScreen(
     val dayNightMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && prefs.getBoolean(Settings.PREF_THEME_DAY_NIGHT, Defaults.PREF_THEME_DAY_NIGHT)
     val items = listOf(
         R.string.settings_screen_theme,
+        Settings.PREF_VISUAL_THEME_PACK,
+        SettingsWithoutKey.IMPORT_VISUAL_THEME,
+        SettingsWithoutKey.REMOVE_VISUAL_THEME,
         Settings.PREF_THEME_STYLE,
         Settings.PREF_ICON_STYLE,
         Settings.PREF_CUSTOM_ICON_NAMES,
@@ -102,6 +108,32 @@ fun AppearanceScreen(
 }
 
 fun createAppearanceSettings(context: Context) = listOf(
+    Setting(
+        context,
+        Settings.PREF_VISUAL_THEME_PACK,
+        R.string.visual_theme_pack,
+        R.string.visual_theme_pack_summary,
+    ) { setting ->
+        val ctx = LocalContext.current
+        val themes = VisualThemeManager.availableThemes(ctx)
+            .map { it.displayName to it.id }
+        ListPreference(setting, themes, Defaults.PREF_VISUAL_THEME_PACK) {
+            KeyboardIconsSet.needsReload = true
+            KeyboardSwitcher.getInstance().setThemeNeedsReload()
+        }
+    },
+    Setting(
+        context,
+        SettingsWithoutKey.IMPORT_VISUAL_THEME,
+        R.string.visual_theme_import,
+        R.string.visual_theme_import_summary,
+    ) { VisualThemeImportPreference(it) },
+    Setting(
+        context,
+        SettingsWithoutKey.REMOVE_VISUAL_THEME,
+        R.string.visual_theme_remove,
+        R.string.visual_theme_remove_summary,
+    ) { VisualThemeDeletePreference(it) },
     Setting(context, Settings.PREF_THEME_STYLE, R.string.theme_style) { setting ->
         val ctx = LocalContext.current
         val prefs = ctx.prefs()

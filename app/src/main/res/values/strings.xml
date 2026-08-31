@@ -8,6 +8,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2"
     tools:ignore="MissingTranslation">
+    <string name="visual_theme_pack">Visual theme</string>
+    <string name="visual_theme_pack_summary">Choose a bundled keyboard artwork pack</string>
+    <string name="visual_theme_import">Import visual theme</string>
+    <string name="visual_theme_import_summary">Install a safe .hbtheme pack from a file</string>
+    <string name="visual_theme_imported">Installed %1$s</string>
+    <string name="visual_theme_import_failed">Could not install theme: %1$s</string>
+    <string name="visual_theme_unknown_error">Unknown error</string>
+    <string name="visual_theme_remove">Remove visual theme</string>
+    <string name="visual_theme_remove_summary">Delete an imported theme pack</string>
+    <string name="visual_theme_remove_none">No imported themes installed</string>
+    <string name="visual_theme_removed">Removed %1$s</string>
     <!-- Name of Android spell checker service. The app name should not be translated. -->
     <string name="spell_checker_service_name">Hu Tao Board Spell Checker</string>
     <!-- Title for IME settings screen. The app name should not be translated. -->

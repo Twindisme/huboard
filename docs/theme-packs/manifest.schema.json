@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/heliboard-theme-manifest-v1.schema.json",
+  "title": "HeliBoard visual theme manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "id", "displayName"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
+    "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "author": { "type": ["string", "null"], "maxLength": 80 },
+    "description": { "type": ["string", "null"], "maxLength": 500 },
+    "capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "keys": { "type": "boolean", "default": false },
+        "keyPreview": { "type": "boolean", "default": false },
+        "keyPressAnimation": { "type": "boolean", "default": false },
+        "toolbar": { "type": "boolean", "default": false },
+        "clipboard": { "type": "boolean", "default": false },
+        "keyboardBackground": { "type": "boolean", "default": false }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "propertyNames": {
+        "pattern": "^(key\\.|icon\\.|preview\\.|keyboard\\.|toolbar\\.|clipboard\\.|popup\\.|animation\\.)[a-z0-9_.-]+$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "oneOf": [
+          { "pattern": "^res:[a-z][a-z0-9_]*$" },
+          { "pattern": "^file:assets/[a-zA-Z0-9_./-]+\\.(png|webp)$" }
+        ]
+      }
+    },
+    "keyRenderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "horizontalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "verticalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "regularLeftCapPx": { "type": "integer", "minimum": 0 },
+        "regularRightCapPx": { "type": "integer", "minimum": 0 },
+        "spaceLeftCapPx": { "type": "integer", "minimum": 0 },
+        "spaceRightCapPx": { "type": "integer", "minimum": 0 },
+        "backspaceIconSize": { "$ref": "#/$defs/proportion" },
+        "actionIconSize": { "$ref": "#/$defs/proportion" },
+        "actionIconAspectRatio": { "type": "number", "exclusiveMinimum": 0 },
+        "actionIconVisibleOffsetX": { "type": "number" },
+        "actionIconVisibleOffsetY": { "type": "number" },
+        "spaceLanguageIconSize": { "$ref": "#/$defs/proportion" },
+        "spaceLanguageIconTop": { "type": "number" },
+        "spaceGlyphWidth": { "$ref": "#/$defs/proportion" },
+        "spaceGlyphTop": { "type": "number" },
+        "iconGradientStart": { "$ref": "#/$defs/color" },
+        "iconGradientEnd": { "$ref": "#/$defs/color" }
+      }
+    },
+    "keyPreview": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bitmapWidthPx": { "type": "number", "exclusiveMinimum": 0 },
+        "bitmapHeightPx": { "type": "number", "exclusiveMinimum": 0 },
+        "faceLeftPx": { "type": "number", "minimum": 0 },
+        "faceTopPx": { "type": "number", "minimum": 0 },
+        "faceRightPx": { "type": "number", "exclusiveMinimum": 0 },
+        "faceBottomPx": { "type": "number", "exclusiveMinimum": 0 },
+        "verticalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "gapDp": { "type": "number", "minimum": -16, "maximum": 64 },
+        "textColor": { "$ref": "#/$defs/color" }
+      }
+    },
+    "keyPressAnimation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["frames"],
+      "properties": {
+        "frames": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 120,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^animation\\.[a-z0-9_.-]+$" }
+        },
+        "frameDurationMs": { "type": "integer", "minimum": 8, "maximum": 1000 },
+        "maxSimultaneousEffects": { "type": "integer", "minimum": 1, "maximum": 16 },
+        "heightToKeyHeight": { "type": "number", "minimum": 0.25, "maximum": 4 },
+        "characterKeysOnly": { "type": "boolean" }
+      }
+    }
+  },
+  "$defs": {
+    "proportion": { "type": "number", "minimum": 0, "maximum": 1 },
+    "color": {
+      "type": ["string", "null"],
+      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+    }
+  }
+}

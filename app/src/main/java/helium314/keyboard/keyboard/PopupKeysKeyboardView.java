@@ -18,17 +18,20 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import helium314.keyboard.accessibility.AccessibilityUtils;
 import helium314.keyboard.accessibility.PopupKeysKeyboardAccessibilityDelegate;
 import helium314.keyboard.keyboard.emoji.EmojiViewCallback;
-import helium314.keyboard.keyboard.internal.HuTaoKeyBackgroundRenderer;
+import helium314.keyboard.keyboard.internal.VisualThemeKeyRenderer;
 import helium314.keyboard.keyboard.internal.KeyDrawParams;
 import helium314.keyboard.keyboard.internal.keyboard_parser.floris.KeyCode;
 import helium314.keyboard.latin.R;
 import helium314.keyboard.latin.RichInputMethodManager;
 import helium314.keyboard.latin.common.Constants;
 import helium314.keyboard.latin.common.CoordinateUtils;
+import helium314.keyboard.theme.ResolvedVisualTheme;
+import helium314.keyboard.theme.VisualThemeManager;
 
 /**
  * A view that renders a virtual {@link PopupKeysKeyboard}. It handles rendering of keys and
@@ -38,7 +41,8 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     private final int[] mCoordinates = CoordinateUtils.newInstance();
 
     private final Drawable mDivider;
-    private final HuTaoKeyBackgroundRenderer mHuTaoKeyBackgroundRenderer;
+    @Nullable
+    private final VisualThemeKeyRenderer mVisualThemeKeyRenderer;
     protected final KeyDetector mKeyDetector;
     private Controller mController = EMPTY_CONTROLLER;
     protected KeyboardActionListener mListener;
@@ -58,7 +62,9 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     public PopupKeysKeyboardView(final Context context, final AttributeSet attrs,
                                  final int defStyle) {
         super(context, attrs, defStyle);
-        mHuTaoKeyBackgroundRenderer = new HuTaoKeyBackgroundRenderer(context, true);
+        final ResolvedVisualTheme visualTheme = VisualThemeManager.activeTheme(context);
+        mVisualThemeKeyRenderer = visualTheme.getHasCustomKeys()
+                ? new VisualThemeKeyRenderer(context, visualTheme, true) : null;
         final TypedArray popupKeysKeyboardViewAttr = context.obtainStyledAttributes(attrs,
                 R.styleable.PopupKeysKeyboardView, defStyle, R.style.PopupKeysKeyboardView);
         mDivider = popupKeysKeyboardViewAttr.getDrawable(R.styleable.PopupKeysKeyboardView_divider);
@@ -99,15 +105,20 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     @Override
     protected void onDrawKeyBackground(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Drawable background) {
-        mHuTaoKeyBackgroundRenderer.draw(key, canvas);
+        if (mVisualThemeKeyRenderer == null) {
+            super.onDrawKeyBackground(key, canvas, background);
+        } else {
+            mVisualThemeKeyRenderer.draw(key, canvas);
+        }
     }
 
     @Override
     public void setKeyboard(@NonNull final Keyboard keyboard) {
         super.setKeyboard(keyboard);
-        // Let multi-character alternatives float above the keyboard without an extra rectangular
-        // panel. Each popup key still draws its own Hu Tao frame and pressed state.
-        setBackground(null);
+        // Decorated popup keys float without an additional rectangular panel.
+        if (mVisualThemeKeyRenderer != null) {
+            setBackground(null);
+        }
         mKeyDetector.setKeyboard(
                 keyboard, -getPaddingLeft(), -getPaddingTop() + getVerticalCorrection());
         if (AccessibilityUtils.Companion.getInstance().isAccessibilityEnabled()) {

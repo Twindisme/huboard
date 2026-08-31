@@ -83,6 +83,8 @@ object SettingsWithoutKey {
     const val LOAD_GESTURE_LIB = "load_gesture_library"
     const val BACKGROUND_IMAGE = "background_image"
     const val BACKGROUND_IMAGE_LANDSCAPE = "background_image_landscape"
+    const val IMPORT_VISUAL_THEME = "import_visual_theme"
+    const val REMOVE_VISUAL_THEME = "remove_visual_theme"
     const val CUSTOM_FONT = "custom_font"
     const val CUSTOM_EMOJI_FONT = "custom_emoji_font"
 }

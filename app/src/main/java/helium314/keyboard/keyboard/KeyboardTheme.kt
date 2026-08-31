@@ -28,6 +28,8 @@ import helium314.keyboard.latin.utils.isBrightColor
 import helium314.keyboard.latin.utils.isGoodContrast
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.settings.SettingsActivity
+import helium314.keyboard.theme.ThemeAsset
+import helium314.keyboard.theme.VisualThemeManager
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.EnumMap
@@ -148,7 +150,12 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
 
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
             val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
+            val visualTheme = VisualThemeManager.activeTheme(context)
+            val visualThemeBackground = if (visualTheme.hasKeyboardBackground)
+                visualTheme.drawable(context, ThemeAsset.KEYBOARD_BACKGROUND)
+            else null
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
+                ?: visualThemeBackground
             return when (themeName) {
                 THEME_DYNAMIC -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
@@ -266,7 +273,6 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     "#FDECD2".toColorInt(),
                     "#CD563C".toColorInt(),
                     keyboardBackground = backgroundImage
-                        ?: ContextCompat.getDrawable(context, R.drawable.hu_tao_keyboard_background)
                 )
                 THEME_CLOUDY -> DefaultColors(
                     themeStyle,
