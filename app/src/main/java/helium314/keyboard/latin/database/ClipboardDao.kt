@@ -24,9 +24,7 @@ import kotlin.collections.joinToString
 // currently we should not need to worry about synchronizing access (though maybe we could addClip in a coroutine, then it might be relevant)
 class ClipboardDao private constructor(private val db: Database) {
     interface Listener {
-        fun onClipInserted(position: Int)
-        fun onClipsRemoved(position: Int, count: Int)
-        fun onClipMoved(oldPosition: Int, newPosition: Int)
+        fun onClipboardChanged(entries: List<ClipboardHistoryEntry>, focusedEntryId: Long?)
     }
 
     var listener: Listener? = null
@@ -56,7 +54,8 @@ class ClipboardDao private constructor(private val db: Database) {
                 ))
             }
         }
-        sort()
+        val pinnedFirst = Settings.getValues()?.mClipboardHistoryPinnedFirst != false
+        sortWith(ClipboardHistoryEntry.comparator(pinnedFirst))
     }
 
     fun addClip(timestamp: Long, pinned: Boolean, text: String) = synchronized(this) {
@@ -131,53 +130,51 @@ class ClipboardDao private constructor(private val db: Database) {
         if (filename != null && context != null)
             deleteIfSizeExceeded(context.prefs())
         cache.add(entry)
-        cache.sort()
-        listener?.onClipInserted(cache.indexOf(entry))
+        sortCache()
+        notifyChanged(entry.id)
     }
 
     private fun updateTimestampAt(index: Int, timestamp: Long) {
-        val entry = cache[index]
-        entry.timeStamp = timestamp
-        cache.sort()
-        listener?.onClipMoved(index, cache.indexOf(entry))
+        val entry = cache[index].copy(timeStamp = timestamp)
         val cv = ContentValues(1)
         cv.put(COLUMN_TIMESTAMP, timestamp)
         db.writableDatabase.update(TABLE, cv, "$COLUMN_ID = ${entry.id}", null)
+        cache[index] = entry
+        sortCache()
+        notifyChanged(entry.id)
     }
 
-    fun isPinned(index: Int) = cache[index].isPinned
+    fun isPinned(id: Long) = cache.firstOrNull { it.id == id }?.isPinned
 
-    fun getAt(index: Int) = cache[index]
+    fun get(id: Long) = cache.firstOrNull { it.id == id }
 
-    fun get(id: Long) = cache.first { it.id == id }
-
-    fun getAll(): List<ClipboardHistoryEntry> = cache
+    fun getAll(): List<ClipboardHistoryEntry> = cache.toList()
 
     fun count() = cache.size
 
-    fun sort() = cache.sort()
+    fun sort() = synchronized(this) {
+        sortCache()
+        notifyChanged()
+    }
 
     fun togglePinned(id: Long) = synchronized(this) {
-        val entry = cache.first { it.id == id }
-        entry.isPinned = !entry.isPinned
-        entry.timeStamp = System.currentTimeMillis()
-        if (listener != null) {
-            val oldPos = cache.indexOf(entry)
-            cache.sort()
-            val newPos = cache.indexOf(entry)
-            listener?.onClipMoved(oldPos, newPos)
-        } else {
-            cache.sort()
-        }
+        val index = cache.indexOfFirst { it.id == id }
+        if (index < 0) return@synchronized
+        val entry = cache[index].copy(
+            isPinned = !cache[index].isPinned,
+            timeStamp = System.currentTimeMillis(),
+        )
         val cv = ContentValues(2)
         cv.put(COLUMN_PINNED, entry.isPinned)
         cv.put(COLUMN_TIMESTAMP, entry.timeStamp)
         db.writableDatabase.update(TABLE, cv, "$COLUMN_ID = ${entry.id}", null)
+        cache[index] = entry
+        sortCache()
+        notifyChanged(entry.id)
     }
 
-    // RecyclerView initiates this, so we don't call listener (or we'll get an IndexOutOfRangeException from RecyclerView)
-    fun deleteClipAt(index: Int) {
-        delete(listOf(cache[index]))
+    fun deleteClip(id: Long) {
+        cache.firstOrNull { it.id == id }?.let { delete(listOf(it)) }
     }
 
     private fun delete(entries: List<ClipboardHistoryEntry>) = synchronized(this) {
@@ -185,6 +182,7 @@ class ClipboardDao private constructor(private val db: Database) {
         cache.removeAll(entries)
         db.writableDatabase.delete(TABLE, "$COLUMN_ID IN (${entries.joinToString(",") { it.id.toString() }})", null)
         entries.forEach { if (it.filename != null) File(clipFilesDir, it.filename).delete() }
+        notifyChanged()
     }
 
     fun clearOldClips(now: Boolean = false) {
@@ -202,22 +200,28 @@ class ClipboardDao private constructor(private val db: Database) {
     }
 
     fun clearNonPinned() {
-        val indicesToRemove = mutableListOf<Int>()
-        cache.forEachIndexed { idx, clip ->
-            if (!clip.isPinned)
-                indicesToRemove.add(idx)
-        }
-        if (indicesToRemove.isEmpty())
+        val entriesToRemove = cache.filter { !it.isPinned }
+        if (entriesToRemove.isEmpty())
             return // nothing to remove
-        delete(cache.filter { !it.isPinned })
-        listener?.onClipsRemoved(indicesToRemove[0], indicesToRemove.size)
+        delete(entriesToRemove)
     }
 
     fun clear() {
-        if (count() == 0) return
-        cache.clear()
-        listener?.onClipsRemoved(0, count())
-        db.writableDatabase.delete(TABLE, null, null)
+        synchronized(this) {
+            if (count() == 0) return@synchronized
+            cache.clear()
+            db.writableDatabase.delete(TABLE, null, null)
+            notifyChanged()
+        }
+    }
+
+    private fun sortCache() {
+        val pinnedFirst = Settings.getValues()?.mClipboardHistoryPinnedFirst != false
+        cache.sortWith(ClipboardHistoryEntry.comparator(pinnedFirst))
+    }
+
+    private fun notifyChanged(focusedEntryId: Long? = null) {
+        listener?.onClipboardChanged(cache.toList(), focusedEntryId)
     }
 
     fun cleanupFiles(prefs: SharedPreferences) {

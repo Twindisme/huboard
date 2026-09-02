@@ -93,7 +93,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:theme="@style/TransparentActivityTheme" android:excludeFromRecents="true" android:noHistory="true"
             android:windowSoftInputMode="adjustResize|stateAlwaysVisible" android:configChanges="orientation|screenSize"/>
 
-        <activity android:name="helium314.keyboard.updates.HuTaoUpdateActivity"
+        <activity android:name="helium314.keyboard.updates.UpdateActivity"
             android:theme="@style/platformActivityTheme"
             android:exported="false"
             android:directBootAware="false" />
@@ -146,7 +146,7 @@ SPDX-License-Identifier: Apache-2.0 AND GPL-3.0-only
             android:directBootAware="false">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/hu_tao_update_provider_path" />
+                android:resource="@xml/update_provider_path" />
         </provider>
     </application>
 

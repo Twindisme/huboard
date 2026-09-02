@@ -1,3 +1,18 @@
-Please make sure you are at least reasonably close to the contribution guidelines: https://github.com/HeliBorg/HeliBoard/blob/main/CONTRIBUTING.md#guidelines
-Due to maintainer availability, your PR may take quite some time to be addressed. This especially applies to large PRs.
-<!-- (please remove the text above before submitting the PR) -->
+## Goal
+
+<!-- What user-facing problem does this solve? -->
+
+## Changes
+
+
+## Validation
+
+- [ ] `./gradlew :app:testRunTestsUnitTest :app:lintRunTests`
+- [ ] Tested on an emulator or device when behavior or visuals changed
+- [ ] Added or updated tests where practical
+- [ ] Updated public documentation when behavior or the `.hbtheme` format changed
+- [ ] Included source and license information for third-party code or assets
+
+## Screenshots or recording
+
+<!-- Required for noticeable visual changes. Remove sensitive keyboard content. -->

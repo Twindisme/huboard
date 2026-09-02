@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "id": "astral_weave",
+  "displayName": "Astral Weave",
+  "author": "huBoard community",
+  "description": "A restrained midnight constellation woven between your recent key presses.",
+  "versionCode": 2,
+  "versionName": "1.1",
+  "minimumEngineVersion": 4,
+  "colors": {
+    "accent": "#9CCBFF",
+    "background": "#050713",
+    "keyBackground": "#10162A",
+    "functionalKey": "#0B1020",
+    "spaceBar": "#0C1225",
+    "keyText": "#F3F7FF",
+    "keyHintText": "#7E91B8",
+    "suggestionText": "#E8EEFF",
+    "spaceBarText": "#C7D5F3",
+    "gesture": "#B89CFF"
+  },
+  "appearance": {
+    "keyboardStyle": "Rounded",
+    "keyBorders": true,
+    "showMoreSuggestionsHint": false,
+    "clipboardSuggestionContentOffsetYDp": 0
+  },
+  "capabilities": {
+    "keyPressAnimation": true,
+    "keyboardBackground": true
+  },
+  "assets": {
+    "theme.thumbnail": "file:assets/astral_thumbnail.svg",
+    "keyboard.background": "file:assets/astral_keyboard_background.svg",
+    "animation.constellation_script": "file:assets/astral_constellation.luau"
+  },
+  "rendering": {
+    "theme.thumbnail": { "mode": "crop" },
+    "keyboard.background": { "mode": "crop" }
+  },
+  "keyPressAnimation": {
+    "script": {
+      "asset": "animation.constellation_script",
+      "apiVersion": 1,
+      "memoryLimitKb": 2048,
+      "frameTimeLimitMs": 4.0,
+      "maxDrawCommandsPerFrame": 256
+    },
+    "durationMs": 1700,
+    "maxSimultaneousEffects": 16,
+    "characterKeysOnly": true
+  }
+}

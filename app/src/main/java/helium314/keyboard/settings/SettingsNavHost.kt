@@ -32,6 +32,8 @@ import helium314.keyboard.settings.screens.SecondaryLayoutScreen
 import helium314.keyboard.settings.screens.SubtypeScreen
 import helium314.keyboard.settings.screens.TextCorrectionScreen
 import helium314.keyboard.settings.screens.ToolbarScreen
+import helium314.keyboard.settings.screens.VisualThemeBrowserScreen
+import helium314.keyboard.settings.screens.VisualThemeLabScreen
 import helium314.keyboard.settings.screens.gesturedata.GestureDataScreen
 import helium314.keyboard.settings.screens.gesturedata.ReviewScreen
 import kotlinx.coroutines.CoroutineScope
@@ -111,6 +113,20 @@ fun SettingsNavHost(
         composable(SettingsDestination.Appearance) {
             AppearanceScreen(onClickBack = ::goBack)
         }
+        composable(SettingsDestination.VisualThemes) {
+            VisualThemeBrowserScreen(
+                onClickBack = ::goBack,
+                onOpenLab = { themeId ->
+                    navController.navigate(SettingsDestination.ThemeLab + themeId)
+                },
+            )
+        }
+        composable(SettingsDestination.ThemeLab + "{themeId}") {
+            VisualThemeLabScreen(
+                themeId = it.arguments?.getString("themeId").orEmpty(),
+                onClickBack = ::goBack,
+            )
+        }
         composable(SettingsDestination.PersonalDictionary + "{locale}") {
             val locale = it.arguments?.getString("locale")?.takeIf { loc -> loc.isNotBlank() }?.constructLocale()
             PersonalDictionaryScreen(
@@ -156,6 +172,8 @@ object SettingsDestination {
     const val Advanced = "advanced"
     const val Debug = "debug"
     const val Appearance = "appearance"
+    const val VisualThemes = "visual_themes"
+    const val ThemeLab = "theme_lab/"
     const val Colors = "colors/"
     const val ColorsNight = "colors_night/"
     const val PersonalDictionaries = "personal_dictionaries"

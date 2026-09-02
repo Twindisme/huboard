@@ -75,6 +75,7 @@
             style="?attr/suggestionWordStyle">
         </LinearLayout>
         <FrameLayout
+            android:id="@+id/visual_theme_toolbar_end_container"
             android:layout_width="61dp"
             android:layout_height="match_parent">
             <ImageView

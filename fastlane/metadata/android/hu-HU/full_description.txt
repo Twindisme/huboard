@@ -1,5 +1,4 @@
-A HeliBoard egy adatvédelem-tudatos, nyílt forráskódú billentyűzet, amely az AOSP / OpenBoard alapjain nyugszik.
-Nem használ internet-hozzáférést, így 100%-ban offline működik.
+A huBoard egy adatvédelem-tudatos, nyílt forráskódú billentyűzet, amely az AOSP / OpenBoard alapjain nyugszik.
 
 Funkciók:
 <ul>

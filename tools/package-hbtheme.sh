@@ -17,8 +17,8 @@ if [[ -e "$theme_directory/assets" && ! -d "$theme_directory/assets" ]]; then
   echo "error: $theme_directory/assets is not a directory" >&2
   exit 1
 fi
-if find "$theme_directory" -type f ! -name manifest.json ! -path '*/assets/*.png' ! -path '*/assets/*.webp' -print -quit | grep -q .; then
-  echo "error: packs may contain only manifest.json and assets/*.png or assets/*.webp" >&2
+if find "$theme_directory" -type f ! -name manifest.json ! -path '*/assets/*.png' ! -path '*/assets/*.webp' ! -path '*/assets/*.svg' ! -path '*/assets/*.json' ! -path '*/assets/*.luau' -print -quit | grep -q .; then
+  echo "error: packs may contain only manifest.json and PNG, WebP, SVG, Lottie JSON, or Luau files under assets/" >&2
   exit 1
 fi
 

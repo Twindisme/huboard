@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="200" viewBox="0 0 160 200">
+  <defs>
+    <radialGradient id="press" cx="50%" cy="18%" r="88%">
+      <stop offset="0" stop-color="#274458"/>
+      <stop offset="0.44" stop-color="#15212B"/>
+      <stop offset="1" stop-color="#0B0F15"/>
+    </radialGradient>
+  </defs>
+  <rect x="2" y="2" width="156" height="196" rx="23" fill="#76D2FF" fill-opacity="0.08"/>
+  <rect x="7" y="7" width="146" height="186" rx="18" fill="url(#press)" stroke="#83D6FF" stroke-opacity="0.78" stroke-width="3"/>
+  <path d="M25 13 H135" stroke="#E2F5FF" stroke-opacity="0.48" stroke-width="2"/>
+</svg>

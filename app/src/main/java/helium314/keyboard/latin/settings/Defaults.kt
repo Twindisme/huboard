@@ -43,12 +43,12 @@ object Defaults {
     }
 
     private const val DEFAULT_SIZE_SCALE = 1.0f // 100%
-    const val PREF_VISUAL_THEME_PACK = "hu_tao"
-    const val PREF_THEME_STYLE = KeyboardTheme.STYLE_ROUNDED
+    const val PREF_VISUAL_THEME_PACK = "classic"
+    const val PREF_THEME_STYLE = KeyboardTheme.STYLE_MATERIAL
     fun PREF_ICON_STYLE(prefs: SharedPreferences) = prefs.getString(Settings.PREF_THEME_STYLE, PREF_THEME_STYLE)!!
-    const val PREF_THEME_COLORS = KeyboardTheme.THEME_HU_TAO
-    const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_HU_TAO
-    const val PREF_THEME_KEY_BORDERS = true
+    const val PREF_THEME_COLORS = KeyboardTheme.THEME_LIGHT
+    const val PREF_THEME_COLORS_NIGHT = KeyboardTheme.THEME_DARK
+    const val PREF_THEME_KEY_BORDERS = false
     @JvmField
     val PREF_THEME_DAY_NIGHT = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     const val PREF_CUSTOM_ICON_NAMES = ""
@@ -172,6 +172,7 @@ object Defaults {
     const val PREF_AUTO_SHOW_TOOLBAR = false
     // Decorated toolbars give way to word/clipboard suggestions as soon as they are available.
     const val PREF_AUTO_HIDE_TOOLBAR = true
+    const val PREF_AUTOMATIC_UPDATE_CHECKS = true
     val PREF_CLIPBOARD_TOOLBAR_KEYS = defaultClipboardToolbarPref
     const val PREF_ABC_AFTER_EMOJI = false
     const val PREF_ABC_AFTER_CLIP = false

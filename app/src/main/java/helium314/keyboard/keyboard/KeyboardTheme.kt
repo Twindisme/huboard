@@ -30,6 +30,7 @@ import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.settings.SettingsActivity
 import helium314.keyboard.theme.ThemeAsset
 import helium314.keyboard.theme.VisualThemeManager
+import helium314.keyboard.theme.VisualThemeValidator
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.EnumMap
@@ -60,7 +61,6 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_BLUE_GRAY = "blue_gray"
         const val THEME_BROWN = "brown"
         const val THEME_CHOCOLATE = "chocolate"
-        const val THEME_HU_TAO = "hu_tao"
         const val THEME_CLOUDY = "cloudy"
         const val THEME_FOREST = "forest"
         const val THEME_INDIGO = "indigo"
@@ -69,7 +69,6 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         const val THEME_SAND = "sand"
         const val THEME_VIOLETTE = "violette"
         fun getAvailableDefaultColors(prefs: SharedPreferences, isNight: Boolean) = listOfNotNull(
-            THEME_HU_TAO,
             if (!isNight) THEME_LIGHT else null, THEME_DARK,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) THEME_DYNAMIC else null,
             if (prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE) == STYLE_HOLO) THEME_HOLO_WHITE else null,
@@ -120,8 +119,11 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
         @JvmStatic
         fun getKeyboardTheme(context: Context): KeyboardTheme {
             val prefs = context.prefs()
-            val style = prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
-            val borders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
+            val appearance = VisualThemeManager.activeTheme(context).manifest.appearance
+            val style = appearance.keyboardStyle
+                ?: prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
+            val borders = appearance.keyBorders
+                ?: prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val matchingId = when (style) {
                 STYLE_HOLO -> THEME_ID_HOLO_BASE
                 STYLE_ROUNDED -> if (borders) THEME_ID_ROUNDED_BASE_BORDER else THEME_ID_ROUNDED_BASE
@@ -143,19 +145,41 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                 prefs.getString(Settings.PREF_THEME_COLORS_NIGHT, Defaults.PREF_THEME_COLORS_NIGHT)
             else
                 prefs.getString(Settings.PREF_THEME_COLORS, Defaults.PREF_THEME_COLORS)
-            val themeStyle = prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
+            val themeStyle = VisualThemeManager.activeTheme(context).manifest.appearance.keyboardStyle
+                ?: prefs.getString(Settings.PREF_THEME_STYLE, Defaults.PREF_THEME_STYLE)
 
             return getThemeColors(themeName!!, themeStyle!!, context, prefs, isNight)
         }
 
         private fun getThemeColors(themeName: String, themeStyle: String, context: Context, prefs: SharedPreferences, isNight: Boolean): Colors {
-            val hasBorders = prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val visualTheme = VisualThemeManager.activeTheme(context)
+            val hasBorders = visualTheme.manifest.appearance.keyBorders
+                ?: prefs.getBoolean(Settings.PREF_THEME_KEY_BORDERS, Defaults.PREF_THEME_KEY_BORDERS)
             val visualThemeBackground = if (visualTheme.hasKeyboardBackground)
                 visualTheme.drawable(context, ThemeAsset.KEYBOARD_BACKGROUND)
             else null
             val backgroundImage = Settings.readUserBackgroundImage(context, isNight)
                 ?: visualThemeBackground
+            visualTheme.manifest.colors?.let { colors ->
+                return DefaultColors(
+                    themeStyle,
+                    hasBorders,
+                    VisualThemeValidator.parseColor(colors.accent),
+                    VisualThemeValidator.parseColor(colors.background),
+                    VisualThemeValidator.parseColor(colors.keyBackground),
+                    VisualThemeValidator.parseColor(colors.functionalKey),
+                    VisualThemeValidator.parseColor(colors.spaceBar),
+                    VisualThemeValidator.parseColor(colors.keyText),
+                    VisualThemeValidator.parseColor(colors.keyHintText),
+                    colors.suggestionText?.let(VisualThemeValidator::parseColor)
+                        ?: VisualThemeValidator.parseColor(colors.keyText),
+                    colors.spaceBarText?.let(VisualThemeValidator::parseColor)
+                        ?: VisualThemeValidator.parseColor(colors.keyHintText),
+                    colors.gesture?.let(VisualThemeValidator::parseColor)
+                        ?: VisualThemeValidator.parseColor(colors.accent),
+                    keyboardBackground = backgroundImage,
+                )
+            }
             return when (themeName) {
                 THEME_DYNAMIC -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) DynamicColors(context, themeStyle, hasBorders, backgroundImage)
@@ -257,21 +281,6 @@ private constructor(val themeId: Int, @JvmField val mStyleId: Int) {
                     Color.rgb(193, 163, 146),
                     Color.WHITE,
                     Color.WHITE,
-                    keyboardBackground = backgroundImage
-                )
-                THEME_HU_TAO -> DefaultColors(
-                    themeStyle,
-                    hasBorders,
-                    "#CD563C".toColorInt(),
-                    "#48231F".toColorInt(),
-                    "#4B302C".toColorInt(),
-                    "#331E22".toColorInt(),
-                    "#692D2B".toColorInt(),
-                    "#FDECD2".toColorInt(),
-                    "#D3B9A0".toColorInt(),
-                    "#FDECD2".toColorInt(),
-                    "#FDECD2".toColorInt(),
-                    "#CD563C".toColorInt(),
                     keyboardBackground = backgroundImage
                 )
                 THEME_CLOUDY -> DefaultColors(

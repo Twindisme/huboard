@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.res.stringResource
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import helium314.keyboard.compat.locale
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
@@ -40,6 +41,7 @@ import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.FileUtils
 import helium314.keyboard.latin.define.DebugFlags
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.utils.BackButton
 import helium314.keyboard.latin.utils.DeviceProtectedUtils
 import helium314.keyboard.latin.utils.ExecutorUtils
@@ -53,7 +55,7 @@ import helium314.keyboard.settings.dialogs.ConfirmationDialog
 import helium314.keyboard.settings.dialogs.NewDictionaryDialog
 import helium314.keyboard.settings.screens.gesturedata.END_DATE_EPOCH_MILLIS
 import helium314.keyboard.settings.screens.gesturedata.TWO_WEEKS_IN_MILLIS
-import helium314.keyboard.updates.HuTaoUpdater
+import helium314.keyboard.updates.AppUpdater
 import kotlinx.coroutines.flow.MutableStateFlow
 import java.io.BufferedOutputStream
 import java.io.File
@@ -169,14 +171,19 @@ open class SettingsActivity : ComponentActivity(), SharedPreferences.OnSharedPre
         requestUpdateNotificationPermission()
     }
 
-    private fun requestUpdateNotificationPermission() {
-        HuTaoUpdater.checkForUpdates(this)
+    fun requestUpdateNotificationPermission() {
+        if (!prefs.getBoolean(
+                Settings.PREF_AUTOMATIC_UPDATE_CHECKS,
+                Defaults.PREF_AUTOMATIC_UPDATE_CHECKS,
+            )
+        ) return
+        AppUpdater.checkForUpdates(this)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
             PackageManager.PERMISSION_GRANTED ||
-            prefs.getBoolean("hu_tao_update_notification_permission_asked", false)
+            prefs.getBoolean("huboard_update_notification_permission_asked", false)
         ) return
-        prefs.edit().putBoolean("hu_tao_update_notification_permission_asked", true).apply()
+        prefs.edit { putBoolean("huboard_update_notification_permission_asked", true) }
         ActivityCompat.requestPermissions(
             this,
             arrayOf(Manifest.permission.POST_NOTIFICATIONS),
@@ -193,7 +200,7 @@ open class SettingsActivity : ComponentActivity(), SharedPreferences.OnSharedPre
         if (requestCode == UPDATE_NOTIFICATION_PERMISSION_REQUEST &&
             grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
         ) {
-            HuTaoUpdater.checkForUpdates(this, force = true)
+            AppUpdater.checkForUpdates(this, force = true)
         }
     }
 

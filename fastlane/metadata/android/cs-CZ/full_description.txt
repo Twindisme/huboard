@@ -1,5 +1,4 @@
-HeliBoard je open-source klávesnice zaměřená na soukromí, založená na AOSP / OpenBoard.
-Nepoužívá internet, a je tedy 100% offline.
+huBoard je open-source klávesnice zaměřená na soukromí, založená na AOSP / OpenBoard.
 
 Funkce:
 <ul>

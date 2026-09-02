@@ -118,6 +118,7 @@ fun <T: Any?> SearchScreen(
     filteredItems: (String) -> List<T>,
     itemContent: @Composable (T) -> Unit,
     icon: @Composable (() -> Unit)? = null,
+    additionalIcon: @Composable (() -> Unit)? = null,
     menu: List<Pair<String, () -> Unit>>? = null,
     content: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
@@ -156,6 +157,7 @@ fun <T: Any?> SearchScreen(
                                 IconButton(onClick = { setShowSearch(!showSearch) }) { SearchIcon() }
                             else
                                 icon()
+                            additionalIcon?.invoke()
                             if (menu != null)
                                 Box {
                                     var showMenu by remember { mutableStateOf(false) }

@@ -51,7 +51,7 @@
     <dimen name="config_key_hint_letter_padding">1dp</dimen>
     <dimen name="config_key_shifted_letter_hint_padding">2dp</dimen>
 
-    <!-- Match the Hu Tao toolbar source asset's 160 px height at the target 450 dpi. -->
+    <!-- huBoard uses a taller toolbar for artwork and more comfortable touch targets. -->
     <dimen name="config_suggestions_strip_height">57dp</dimen>
     <dimen name="config_suggestions_strip_edge_key_width">36dp</dimen>
     <dimen name="config_more_suggestions_row_height">40dp</dimen>

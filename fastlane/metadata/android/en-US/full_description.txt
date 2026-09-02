@@ -1,5 +1,5 @@
-HeliBoard is a privacy-conscious open-source keyboard, based on AOSP / OpenBoard.
-Does not use internet permission, and thus is 100% offline.
+huBoard is a privacy-conscious open-source keyboard, based on AOSP / OpenBoard.
+Typing stays offline. Optional update checks connect only to huBoard's GitHub releases and can be disabled in settings.
 
 Features:
 <ul>

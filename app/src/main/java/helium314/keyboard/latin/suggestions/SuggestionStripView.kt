@@ -134,7 +134,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private val backpackKey = findViewById<ImageButton>(R.id.visual_theme_toolbar_start_key)
     private val toolbarEndArt = findViewById<ImageView>(R.id.visual_theme_toolbar_end_art)
     private val toolbarExpandKey = findViewById<ImageButton>(R.id.suggestions_strip_toolbar_key)
-    private val themeSearchTag = Any()
     private val incognitoIcon = KeyboardIconsSet.instance.getNewDrawable(ToolbarKey.INCOGNITO.name, context)
     private val toolbarArrowIcon = KeyboardIconsSet.instance.getNewDrawable(KeyboardIconsSet.NAME_TOOLBAR_KEY, context)
     private var defaultToolbarBackground: Drawable = Color.TRANSPARENT.toDrawable()
@@ -142,8 +141,11 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var direction = 1 // 1 if LTR, -1 if RTL
 
     private val toolbarKeyLayoutParams = LinearLayout.LayoutParams(
-        if (hasDecoratedToolbar) 56.dpToPx(resources)
-        else resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_edge_key_width),
+        if (hasDecoratedToolbar) VisualThemeToolbarStyler.toolbarKeyWidthPx(
+            context,
+            visualTheme,
+            56.dpToPx(resources),
+        ) else resources.getDimensionPixelSize(R.dimen.config_suggestions_strip_edge_key_width),
         LinearLayout.LayoutParams.MATCH_PARENT
     )
 
@@ -160,6 +162,8 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
                 visualTheme.drawable(context, ThemeAsset.TOOLBAR_END),
             )
             toolbarExpandKey.setBackgroundColor(Color.TRANSPARENT)
+            VisualThemeToolbarStyler.styleStartArtworkButton(backpackKey, visualTheme)
+            VisualThemeToolbarStyler.styleToolbarButton(toolbarExpandKey, visualTheme)
         } else {
             toolbarStartContainer.isGone = true
             toolbarEndArt.isGone = true
@@ -188,19 +192,17 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
             setToolbarVisibility(true)
         }
 
-        val toolbarButtons = if (hasDecoratedToolbar) listOf(
-            createThemedToolbarKey(ToolbarKey.SETTINGS, ThemeAsset.TOOLBAR_KEYBOARD),
-            createThemedToolbarKey(ToolbarKey.SELECT_WORD, ThemeAsset.TOOLBAR_CURSOR),
-            createThemedSearchKey(),
-            createThemedToolbarKey(ToolbarKey.EMOJI, ThemeAsset.TOOLBAR_EMOJI),
-        ) else getEnabledToolbarKeys(context.prefs()).map { createToolbarKey(context, it) }
+        val toolbarButtons = getEnabledToolbarKeys(context.prefs()).map {
+            if (hasDecoratedToolbar) createThemedToolbarKey(it) else createToolbarKey(context, it)
+        }
         for (button in toolbarButtons) {
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
             toolbar.addView(button)
         }
         for (pinnedKey in getPinnedToolbarKeys(context.prefs())) {
-            val button = createToolbarKey(context, pinnedKey)
+            val button = if (hasDecoratedToolbar) createThemedToolbarKey(pinnedKey)
+            else createToolbarKey(context, pinnedKey)
             button.layoutParams = toolbarKeyLayoutParams
             setupKey(button, colors)
             pinnedKeys.addView(button)
@@ -221,7 +223,15 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     private var suggestedWords = SuggestedWords.getEmptyInstance()
     private var startIndexOfMoreSuggestions = 0
     private var isExternalSuggestionVisible = false // Required to disable the more suggestions if other suggestions are visible
-    private val layoutHelper = SuggestionStripLayoutHelper(context, attrs, defStyle, wordViews, dividerViews, debugInfoViews)
+    private val layoutHelper = SuggestionStripLayoutHelper(
+        context,
+        attrs,
+        defStyle,
+        wordViews,
+        dividerViews,
+        debugInfoViews,
+        visualTheme.showMoreSuggestionsHint,
+    )
     private val moreSuggestionsView = moreSuggestionsContainer.findViewById<MoreSuggestionsView>(R.id.more_suggestions_view).apply {
         val slidingListener = object : SimpleOnGestureListener() {
             override fun onScroll(down: MotionEvent?, me: MotionEvent, deltaX: Float, deltaY: Float): Boolean {
@@ -375,10 +385,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
     override fun onClick(view: View) {
         AudioAndHapticFeedbackManager.getInstance().performHapticAndAudioFeedback(KeyCode.NOT_SPECIFIED, this, HapticEvent.KEY_PRESS)
         val tag = view.tag
-        if (tag === themeSearchTag) {
-            listener.onCodeInput(Constants.CODE_ENTER, Constants.SUGGESTION_STRIP_COORDINATE, Constants.SUGGESTION_STRIP_COORDINATE, false)
-            return
-        }
         if (tag is ToolbarKey) {
             val code = getCodeForToolbarKey(tag)
             if (code != KeyCode.UNSPECIFIED) {
@@ -403,7 +409,6 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
 
     override fun onLongClick(view: View): Boolean {
         AudioAndHapticFeedbackManager.getInstance().performHapticFeedback(this, HapticEvent.KEY_LONG_PRESS)
-        if (view.tag === themeSearchTag) return true
         if (view.tag is ToolbarKey) {
             onLongClickToolbarKey(view)
             return true
@@ -609,27 +614,19 @@ class SuggestionStripView(context: Context, attrs: AttributeSet?, defStyle: Int)
         view.setOnLongClickListener(this)
         (view.layoutParams as LinearLayout.LayoutParams).weight = 1f
         colors.setColor(view, ColorType.TOOL_BAR_KEY)
-        if (hasDecoratedToolbar) view.setBackgroundColor(Color.TRANSPARENT)
+        if (hasDecoratedToolbar) {
+            view.setBackgroundColor(Color.TRANSPARENT)
+            VisualThemeToolbarStyler.styleToolbarButton(view, visualTheme)
+        }
         else colors.setBackground(view, ColorType.STRIP_BACKGROUND)
     }
 
-    private fun createThemedToolbarKey(key: ToolbarKey, asset: String): ImageButton =
+    private fun createThemedToolbarKey(key: ToolbarKey): ImageButton =
         createToolbarKey(context, key).apply {
-            visualTheme.drawable(context, asset)?.let(::setImageDrawable)
+            setImageDrawable(
+                VisualThemeToolbarStyler.themedToolbarIcon(context, visualTheme, key),
+            )
         }
-
-    private fun createThemedSearchKey() = ImageButton(context, null, R.attr.suggestionWordStyle).apply {
-        scaleType = ImageView.ScaleType.CENTER
-        tag = themeSearchTag
-        contentDescription = resources.getString(R.string.label_search_key)
-        setImageDrawable(
-            visualTheme.drawable(context, ThemeAsset.TOOLBAR_SEARCH)
-                ?: KeyboardIconsSet.instance.getNewDrawable(
-                    KeyboardIconsSet.NAME_SEARCH_KEY,
-                    context,
-                ),
-        )
-    }
 
     companion object {
         @JvmField

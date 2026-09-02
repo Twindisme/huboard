@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Files downloaded by the in-app updater. -->
+<paths>
+    <cache-path
+        name="updates"
+        path="updates/" />
+</paths>

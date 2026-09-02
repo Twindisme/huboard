@@ -1,5 +1,4 @@
-HeliBoard er lyklaborð sem verndar persónuleg gögn, byggt á AOSP / OpenBoard.
-Notar ekki heimildir fyrir internet og er þannig 100% ónettengt.
+huBoard er lyklaborð sem verndar persónuleg gögn, byggt á AOSP / OpenBoard.
 
 Eiginleikar:
 <ul>

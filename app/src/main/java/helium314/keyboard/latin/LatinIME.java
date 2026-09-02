@@ -89,7 +89,7 @@ import helium314.keyboard.latin.utils.SubtypeSettings;
 import helium314.keyboard.latin.utils.SubtypeState;
 import helium314.keyboard.latin.utils.ToolbarMode;
 import helium314.keyboard.settings.SettingsActivity2;
-import helium314.keyboard.updates.HuTaoUpdater;
+import helium314.keyboard.updates.AppUpdater;
 import kotlin.Unit;
 
 import java.io.FileDescriptor;
@@ -786,7 +786,7 @@ public class LatinIME extends InputMethodService implements
 
     @Override
     public void onStartInputView(final EditorInfo editorInfo, final boolean restarting) {
-        HuTaoUpdater.checkForUpdates(this, false);
+        AppUpdater.checkForUpdates(this, false);
         mHandler.onStartInputView(editorInfo, restarting);
         mStatsUtilsManager.onStartInputView();
     }

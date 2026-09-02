@@ -19,6 +19,8 @@ import helium314.keyboard.latin.utils.ViewLayoutUtils;
 import helium314.keyboard.theme.KeyPreviewConfig;
 import helium314.keyboard.theme.ResolvedVisualTheme;
 import helium314.keyboard.theme.ThemeAsset;
+import helium314.keyboard.theme.ThemeNormalizedRect;
+import helium314.keyboard.theme.VisualThemePreviewGeometry;
 import helium314.keyboard.theme.VisualThemeValidator;
 
 import java.util.ArrayDeque;
@@ -122,29 +124,37 @@ public final class KeyPreviewChoreographer {
                     VisualThemeValidator.INSTANCE.parseColor(mThemePreview.getTextColor()));
         }
         int keyDrawWidth = key.getDrawWidth();
-        float previewScale = key.getHeight()
+        final float sourceWidth = mThemePreview.getFaceBounds() == null
+                ? mThemePreview.getBitmapWidthPx() : mThemePreviewBackground.getIntrinsicWidth();
+        final float sourceHeight = mThemePreview.getFaceBounds() == null
+                ? mThemePreview.getBitmapHeightPx() : mThemePreviewBackground.getIntrinsicHeight();
+        final ThemeNormalizedRect faceBounds = VisualThemePreviewGeometry.resolveFaceBounds(
+                mThemePreview, sourceWidth, sourceHeight);
+        final float previewHeight = key.getHeight()
                 * (1.0f + mThemePreview.getVerticalOverscan() * 2.0f)
-                / (mThemePreview.getFaceBottomPx() - mThemePreview.getFaceTopPx());
-        int previewWidth = Math.round(mThemePreview.getBitmapWidthPx() * previewScale);
-        int previewHeight = Math.round(mThemePreview.getBitmapHeightPx() * previewScale);
-        int faceLeft = Math.round(mThemePreview.getFaceLeftPx() * previewScale);
-        int faceTop = Math.round(mThemePreview.getFaceTopPx() * previewScale);
-        int faceRight = Math.round(mThemePreview.getFaceRightPx() * previewScale);
-        int faceBottom = Math.round(mThemePreview.getFaceBottomPx() * previewScale);
+                / (faceBounds.getBottom() - faceBounds.getTop());
+        final float previewWidth = previewHeight * sourceWidth / sourceHeight;
+        final int measuredPreviewWidth = Math.round(previewWidth);
+        final int measuredPreviewHeight = Math.round(previewHeight);
+        int faceLeft = Math.round(faceBounds.getLeft() * previewWidth);
+        int faceTop = Math.round(faceBounds.getTop() * previewHeight);
+        int faceRight = Math.round(faceBounds.getRight() * previewWidth);
+        int faceBottom = Math.round(faceBounds.getBottom() * previewHeight);
         // Treat the transparent halo margins like 9-patch content padding. This centers labels and
         // icons inside the framed key face and keeps popup-key geometry based on the face itself.
         keyPreviewView.setPadding(
-                faceLeft, faceTop, previewWidth - faceRight, previewHeight - faceBottom);
+                faceLeft, faceTop, measuredPreviewWidth - faceRight,
+                measuredPreviewHeight - faceBottom);
         keyPreviewView.measure(
-                View.MeasureSpec.makeMeasureSpec(previewWidth, View.MeasureSpec.EXACTLY),
-                View.MeasureSpec.makeMeasureSpec(previewHeight, View.MeasureSpec.EXACTLY));
+                View.MeasureSpec.makeMeasureSpec(measuredPreviewWidth, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(measuredPreviewHeight, View.MeasureSpec.EXACTLY));
         mParams.setGeometry(keyPreviewView);
         int originX = CoordinateUtils.x(originCoords);
         // The key preview is horizontally aligned with the center of the visible part of the
         // parent key. If it doesn't fit in this {@link KeyboardView}, it is moved inward to fit and
         // the left/right background is used if such background is specified.
         int keyPreviewPosition;
-        int previewX = key.getDrawX() + (keyDrawWidth - previewWidth) / 2 + originX;
+        int previewX = key.getDrawX() + (keyDrawWidth - measuredPreviewWidth) / 2 + originX;
         if (previewX + faceLeft < originX) {
             previewX = originX - faceLeft;
             keyPreviewPosition = KeyPreviewView.POSITION_LEFT;
@@ -163,9 +173,10 @@ public final class KeyPreviewChoreographer {
         int previewY = key.getY() - faceBottom - previewGap
                 + CoordinateUtils.y(originCoords);
 
-        ViewLayoutUtils.placeViewAt(keyPreviewView, previewX, previewY, previewWidth, previewHeight);
-        keyPreviewView.setPivotX(previewWidth / 2.0f);
-        keyPreviewView.setPivotY(previewHeight);
+        ViewLayoutUtils.placeViewAt(keyPreviewView, previewX, previewY,
+                measuredPreviewWidth, measuredPreviewHeight);
+        keyPreviewView.setPivotX(measuredPreviewWidth / 2.0f);
+        keyPreviewView.setPivotY(measuredPreviewHeight);
     }
 
     private void placeDefaultKeyPreview(final Key key, final KeyPreviewView keyPreviewView,

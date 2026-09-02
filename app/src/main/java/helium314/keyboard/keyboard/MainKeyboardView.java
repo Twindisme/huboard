@@ -137,6 +137,8 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     private final VisualThemeKeyPressAnimator mVisualThemeKeyPressAnimator;
     @Nullable
     private final VisualThemeKeyRenderer mVisualThemeKeyRenderer;
+    @Nullable
+    private Key mVisualThemeTopVisualKey;
 
     public MainKeyboardView(final Context context, final AttributeSet attrs) {
         this(context, attrs, R.attr.mainKeyboardViewStyle);
@@ -380,7 +382,8 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         key.onPressed();
         invalidateKey(key);
         if (mVisualThemeKeyPressAnimator != null) {
-            mVisualThemeKeyPressAnimator.start(key, getPaddingLeft(), getPaddingTop());
+            mVisualThemeKeyPressAnimator.start(
+                    key, getPaddingLeft(), getPaddingTop(), getWidth(), getHeight());
             postInvalidateOnAnimation();
         }
 
@@ -763,26 +766,33 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
     @Override
     protected void onDrawKeyTopVisuals(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Paint paint, @NonNull final KeyDrawParams params) {
-        if (mVisualThemeKeyRenderer != null
-                && mVisualThemeKeyRenderer.drawTopVisual(key, canvas)) {
-            return;
-        }
-        if (key.altCodeWhileTyping() && key.isEnabled()) {
-            params.mAnimAlpha = Constants.Color.ALPHA_OPAQUE;
-        }
-        super.onDrawKeyTopVisuals(key, canvas, paint, params);
-        final int code = key.getCode();
-        if (code == Constants.CODE_SPACE) {
-            // If input language are explicitly selected.
-            if (mLanguageOnSpacebarFormatType != LanguageOnSpacebarUtils.FORMAT_TYPE_NONE) {
-                drawLanguageOnSpacebar(key, canvas, paint);
+        final int saved = canvas.save();
+        mVisualThemeTopVisualKey = key;
+        try {
+            if (mVisualThemeKeyRenderer != null) {
+                mVisualThemeKeyRenderer.translateTopContent(key, canvas);
+                if (mVisualThemeKeyRenderer.drawTopVisual(key, canvas)) return;
             }
-            // Whether space key needs to show the "..." popup hint for special purposes
-            if (key.isLongPressEnabled() && mHasMultipleEnabledIMEsOrSubtypes) {
+            if (key.altCodeWhileTyping() && key.isEnabled()) {
+                params.mAnimAlpha = Constants.Color.ALPHA_OPAQUE;
+            }
+            super.onDrawKeyTopVisuals(key, canvas, paint, params);
+            final int code = key.getCode();
+            if (code == Constants.CODE_SPACE) {
+                // If input language are explicitly selected.
+                if (mLanguageOnSpacebarFormatType != LanguageOnSpacebarUtils.FORMAT_TYPE_NONE) {
+                    drawLanguageOnSpacebar(key, canvas, paint);
+                }
+                // Whether space key needs to show the "..." popup hint for special purposes
+                if (key.isLongPressEnabled() && mHasMultipleEnabledIMEsOrSubtypes) {
+                    drawKeyPopupHint(key, canvas, paint, params);
+                }
+            } else if (code == KeyCode.LANGUAGE_SWITCH) {
                 drawKeyPopupHint(key, canvas, paint, params);
             }
-        } else if (code == KeyCode.LANGUAGE_SWITCH) {
-            drawKeyPopupHint(key, canvas, paint, params);
+        } finally {
+            mVisualThemeTopVisualKey = null;
+            canvas.restoreToCount(saved);
         }
     }
 
@@ -792,7 +802,11 @@ public final class MainKeyboardView extends KeyboardView implements DrawingProxy
         if (mVisualThemeKeyRenderer == null) {
             super.drawIcon(canvas, icon, x, y, width, height);
         } else {
-            mVisualThemeKeyRenderer.drawGradientIcon(canvas, icon, x, y, width, height);
+            final Key key = mVisualThemeTopVisualKey != null
+                    && mVisualThemeTopVisualKey.getLabel() == null
+                    ? mVisualThemeTopVisualKey : null;
+            mVisualThemeKeyRenderer.drawGradientIcon(
+                    canvas, icon, key, x, y, width, height);
         }
     }
 

@@ -8,34 +8,36 @@ plugins {
     kotlin("plugin.compose") version "2.3.20"
 }
 
-val huTaoKeystorePath = providers.environmentVariable("HU_TAO_KEYSTORE_PATH")
-val huTaoKeystorePassword = providers.environmentVariable("HU_TAO_KEYSTORE_PASSWORD")
-val huTaoKeyAlias = providers.environmentVariable("HU_TAO_KEY_ALIAS")
-val huTaoKeyPassword = providers.environmentVariable("HU_TAO_KEY_PASSWORD")
+val huBoardKeystorePath = providers.environmentVariable("HUBOARD_KEYSTORE_PATH")
+val huBoardKeystorePassword = providers.environmentVariable("HUBOARD_KEYSTORE_PASSWORD")
+val huBoardKeyAlias = providers.environmentVariable("HUBOARD_KEY_ALIAS")
+val huBoardKeyPassword = providers.environmentVariable("HUBOARD_KEY_PASSWORD")
 
 android {
     compileSdk = 36
+    testBuildType = "debugNoMinify"
 
     signingConfigs {
-        huTaoKeystorePath.orNull?.let { keystorePath ->
-            create("huTaoRelease") {
+        huBoardKeystorePath.orNull?.let { keystorePath ->
+            create("huBoardRelease") {
                 storeFile = file(keystorePath)
-                storePassword = huTaoKeystorePassword.orNull
-                    ?: error("HU_TAO_KEYSTORE_PASSWORD is required when release signing is enabled")
-                keyAlias = huTaoKeyAlias.orNull
-                    ?: error("HU_TAO_KEY_ALIAS is required when release signing is enabled")
-                keyPassword = huTaoKeyPassword.orNull
-                    ?: error("HU_TAO_KEY_PASSWORD is required when release signing is enabled")
+                storePassword = huBoardKeystorePassword.orNull
+                    ?: error("HUBOARD_KEYSTORE_PASSWORD is required when release signing is enabled")
+                keyAlias = huBoardKeyAlias.orNull
+                    ?: error("HUBOARD_KEY_ALIAS is required when release signing is enabled")
+                keyPassword = huBoardKeyPassword.orNull
+                    ?: error("HUBOARD_KEY_PASSWORD is required when release signing is enabled")
             }
         }
     }
 
     defaultConfig {
-        applicationId = "helium314.keyboard.hutao"
+        applicationId = "helium314.keyboard.huboard"
         minSdk = 21
         targetSdk = 36
-        versionCode = 400507
-        versionName = "4.0-hutao.7"
+        versionCode = 400508
+        versionName = "4.0-huboard.1"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters.clear()
             abiFilters.addAll(listOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64"))
@@ -49,7 +51,7 @@ android {
             isShrinkResources = false
             isDebuggable = false
             isJniDebuggable = false
-            signingConfig = signingConfigs.findByName("huTaoRelease")
+            signingConfig = signingConfigs.findByName("huBoardRelease")
         }
         create("nouserlib") { // same as release, but does not allow the user to provide a library
             isMinifyEnabled = true
@@ -93,7 +95,7 @@ android {
             }
             variant.outputs.forEach { output ->
                 if (output is com.android.build.api.variant.impl.VariantOutputImpl) {
-                    output.outputFileName = "HuTaoBoard_${defaultConfig.versionName}-${variant.buildType}.apk"
+                    output.outputFileName = "huBoard_${defaultConfig.versionName}-${variant.buildType}.apk"
                 }
             }
         }
@@ -147,6 +149,7 @@ android {
     namespace = "helium314.keyboard.latin"
     lint {
         abortOnError = true
+        baseline = file("lint-baseline.xml")
     }
 }
 
@@ -159,6 +162,12 @@ dependencies {
 
     // kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+
+    // portable visual-theme vectors
+    implementation("com.caverock:androidsvg-aar:1.4")
+
+    // portable visual-theme animations
+    implementation("com.airbnb.android:lottie:6.7.1")
 
     // compose
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
@@ -180,4 +189,11 @@ dependencies {
     testImplementation("org.robolectric:robolectric:4.16.1")
     testImplementation("androidx.test:runner:1.7.0")
     testImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation(kotlin("test"))
+    androidTestImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test:runner:1.7.0")
+    androidTestImplementation("androidx.test:rules:1.7.0")
+    // 2.4.0 requires minSdk 23; huBoard still supports Android 5 (API 21).
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
 }

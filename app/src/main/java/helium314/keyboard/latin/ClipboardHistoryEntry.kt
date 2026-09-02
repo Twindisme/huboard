@@ -17,21 +17,17 @@ import androidx.core.view.inputmethod.InputContentInfoCompat
 import helium314.keyboard.latin.database.ClipboardDao
 import java.io.File
 
-class ClipboardHistoryEntry(
+data class ClipboardHistoryEntry(
     val id: Long,
-    var timeStamp: Long,
-    var isPinned: Boolean,
+    val timeStamp: Long,
+    val isPinned: Boolean,
     val text: String?,
     val filename: String?,
     val mimeTypes: List<String>?
 ) : Comparable<ClipboardHistoryEntry> {
     // for display order
-    override fun compareTo(other: ClipboardHistoryEntry): Int {
-        val result = other.isPinned.compareTo(isPinned)
-        if (result == 0) return other.timeStamp.compareTo(timeStamp)
-        if (Settings.getValues()?.mClipboardHistoryPinnedFirst == false) return -result
-        return result
-    }
+    override fun compareTo(other: ClipboardHistoryEntry) =
+        comparator(Settings.getValues()?.mClipboardHistoryPinnedFirst != false).compare(this, other)
 
     fun getContentInfo(context: Context): InputContentInfoCompat =
         InputContentInfoCompat(getContentUri(context)!!, ClipDescription(text, mimeTypes?.toTypedArray()), null)
@@ -76,5 +72,18 @@ class ClipboardHistoryEntry(
         imageView.setImageResource(R.drawable.ic_dictionary)
         Settings.getValues().mColors.setColor(imageView, ColorType.EMOJI_CATEGORY)
         textView.text = textView.context.getString(R.string.item_type, mimeTypes.first()) + description
+    }
+
+    companion object {
+        /** A deterministic order keeps DiffUtil and staggered-grid span assignment in sync. */
+        fun comparator(pinnedFirst: Boolean) = Comparator<ClipboardHistoryEntry> { first, second ->
+            val pinOrder = second.isPinned.compareTo(first.isPinned)
+            if (pinOrder != 0) {
+                if (pinnedFirst) pinOrder else -pinOrder
+            } else {
+                val timeOrder = second.timeStamp.compareTo(first.timeStamp)
+                if (timeOrder != 0) timeOrder else second.id.compareTo(first.id)
+            }
+        }
     }
 }

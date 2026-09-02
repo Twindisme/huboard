@@ -84,6 +84,7 @@ final class SuggestionStripLayoutHelper {
     private final int mCenterPositionInStrip;
     private final int mTypedWordPositionWhenAutocorrect;
     private final Drawable mMoreSuggestionsHint;
+    private final boolean mShowMoreSuggestionsHint;
     private static final String MORE_SUGGESTIONS_HINT = "…";
 
     private static final CharacterStyle BOLD_SPAN = new StyleSpan(Typeface.BOLD);
@@ -98,10 +99,12 @@ final class SuggestionStripLayoutHelper {
 
     public SuggestionStripLayoutHelper(final Context context, final AttributeSet attrs,
             final int defStyle, final ArrayList<TextView> wordViews,
-            final ArrayList<View> dividerViews, final ArrayList<TextView> debugInfoViews) {
+            final ArrayList<View> dividerViews, final ArrayList<TextView> debugInfoViews,
+            final boolean showMoreSuggestionsHint) {
         mWordViews = wordViews;
         mDividerViews = dividerViews;
         mDebugInfoViews = debugInfoViews;
+        mShowMoreSuggestionsHint = showMoreSuggestionsHint;
 
         final TextView wordView = wordViews.get(0);
         final View dividerView = dividerViews.get(0);
@@ -399,7 +402,8 @@ final class SuggestionStripLayoutHelper {
     private TextView layoutWord(final Context context, final int positionInStrip, final int width) {
         final TextView wordView = mWordViews.get(positionInStrip);
         final CharSequence word = wordView.getText();
-        if (positionInStrip == mCenterPositionInStrip && mMoreSuggestionsAvailable) {
+        if (mShowMoreSuggestionsHint
+                && positionInStrip == mCenterPositionInStrip && mMoreSuggestionsAvailable) {
             // TODO: This "more suggestions hint" should have a nicely designed icon.
             wordView.setCompoundDrawablesWithIntrinsicBounds(null, null, null, mMoreSuggestionsHint);
             // HACK: Align with other TextViews that have no compound drawables.

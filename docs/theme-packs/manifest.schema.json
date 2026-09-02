@@ -1,16 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.invalid/heliboard-theme-manifest-v1.schema.json",
-  "title": "HeliBoard visual theme manifest",
+  "$id": "https://example.invalid/huboard-theme-manifest.schema.json",
+  "title": "huBoard visual theme manifest",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "id", "displayName"],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "type": "integer", "const": 1 },
     "id": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,47}$" },
     "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
     "author": { "type": ["string", "null"], "maxLength": 80 },
     "description": { "type": ["string", "null"], "maxLength": 500 },
+    "versionCode": { "type": "integer", "minimum": 1, "default": 1 },
+    "versionName": { "type": ["string", "null"], "maxLength": 40 },
+    "minimumEngineVersion": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3,
+      "default": 1
+    },
     "capabilities": {
       "type": "object",
       "additionalProperties": false,
@@ -26,14 +34,61 @@
     "assets": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^(key\\.|icon\\.|preview\\.|keyboard\\.|toolbar\\.|clipboard\\.|popup\\.|animation\\.)[a-z0-9_.-]+$"
+        "pattern": "^(key\\.|icon\\.|preview\\.|keyboard\\.|toolbar\\.|clipboard\\.|popup\\.|animation\\.|theme\\.)[a-z0-9_.-]+$"
       },
       "additionalProperties": {
         "type": "string",
         "oneOf": [
           { "pattern": "^res:[a-z][a-z0-9_]*$" },
-          { "pattern": "^file:assets/[a-zA-Z0-9_./-]+\\.(png|webp)$" }
+          { "pattern": "^file:assets/[a-zA-Z0-9_./-]+\\.(png|webp|svg|json|luau)$" }
         ]
+      }
+    },
+    "rendering": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/assetRenderSpec" }
+    },
+    "colors": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": [
+        "accent",
+        "background",
+        "keyBackground",
+        "functionalKey",
+        "spaceBar",
+        "keyText",
+        "keyHintText"
+      ],
+      "properties": {
+        "accent": { "$ref": "#/$defs/requiredColor" },
+        "background": { "$ref": "#/$defs/requiredColor" },
+        "keyBackground": { "$ref": "#/$defs/requiredColor" },
+        "functionalKey": { "$ref": "#/$defs/requiredColor" },
+        "spaceBar": { "$ref": "#/$defs/requiredColor" },
+        "keyText": { "$ref": "#/$defs/requiredColor" },
+        "keyHintText": { "$ref": "#/$defs/requiredColor" },
+        "suggestionText": { "$ref": "#/$defs/color" },
+        "spaceBarText": { "$ref": "#/$defs/color" },
+        "gesture": { "$ref": "#/$defs/color" }
+      }
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "keyboardStyle": {
+          "type": ["string", "null"],
+          "enum": ["Material", "Holo", "Rounded", null]
+        },
+        "keyBorders": { "type": ["boolean", "null"] },
+        "showMoreSuggestionsHint": { "type": "boolean", "default": true },
+        "clipboardSuggestionContentOffsetYDp": {
+          "type": "integer",
+          "minimum": -16,
+          "maximum": 16,
+          "default": 0
+        }
       }
     },
     "keyRenderer": {
@@ -42,6 +97,7 @@
       "properties": {
         "horizontalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
         "verticalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
+        "centerSpecialKeyArtworkHorizontally": { "type": "boolean", "default": false },
         "regularLeftCapPx": { "type": "integer", "minimum": 0 },
         "regularRightCapPx": { "type": "integer", "minimum": 0 },
         "spaceLeftCapPx": { "type": "integer", "minimum": 0 },
@@ -56,7 +112,51 @@
         "spaceGlyphWidth": { "$ref": "#/$defs/proportion" },
         "spaceGlyphTop": { "type": "number" },
         "iconGradientStart": { "$ref": "#/$defs/color" },
-        "iconGradientEnd": { "$ref": "#/$defs/color" }
+        "iconGradientEnd": { "$ref": "#/$defs/color" },
+        "content": {
+          "type": "object",
+          "propertyNames": {
+            "enum": [
+              "regular",
+              "space",
+              "shift",
+              "delete",
+              "action",
+              "roundFunction",
+              "diamondFunction"
+            ]
+          },
+          "additionalProperties": { "$ref": "#/$defs/keyContentSpec" }
+        }
+      }
+    },
+    "toolbarRenderer": {
+      "$ref": "#/$defs/toolbarRenderer"
+    },
+    "clipboardRenderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "entryInsets": { "$ref": "#/$defs/assetInsets" },
+        "pinnedEntryInsets": { "$ref": "#/$defs/assetInsets" },
+        "entryCornerScale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 2,
+          "default": 1
+        },
+        "pinnedEntryCornerScale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 2,
+          "default": 1
+        },
+        "pinnedContentEndPaddingDp": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 64,
+          "default": 0
+        }
       }
     },
     "keyPreview": {
@@ -71,13 +171,18 @@
         "faceBottomPx": { "type": "number", "exclusiveMinimum": 0 },
         "verticalOverscan": { "type": "number", "minimum": 0, "maximum": 0.5 },
         "gapDp": { "type": "number", "minimum": -16, "maximum": 64 },
-        "textColor": { "$ref": "#/$defs/color" }
+        "textColor": { "$ref": "#/$defs/color" },
+        "faceBounds": {
+          "oneOf": [
+            { "$ref": "#/$defs/normalizedRect" },
+            { "type": "null" }
+          ]
+        }
       }
     },
     "keyPressAnimation": {
       "type": ["object", "null"],
       "additionalProperties": false,
-      "required": ["frames"],
       "properties": {
         "frames": {
           "type": "array",
@@ -85,6 +190,28 @@
           "maxItems": 120,
           "uniqueItems": true,
           "items": { "type": "string", "pattern": "^animation\\.[a-z0-9_.-]+$" }
+        },
+        "lottieAsset": {
+          "type": ["string", "null"],
+          "pattern": "^animation\\.[a-z0-9_.-]+$"
+        },
+        "spriteAtlas": {
+          "oneOf": [
+            { "$ref": "#/$defs/spriteAtlas" },
+            { "type": "null" }
+          ]
+        },
+        "script": {
+          "oneOf": [
+            { "$ref": "#/$defs/motionScript" },
+            { "type": "null" }
+          ]
+        },
+        "durationMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5000,
+          "default": 0
         },
         "frameDurationMs": { "type": "integer", "minimum": 8, "maximum": 1000 },
         "maxSimultaneousEffects": { "type": "integer", "minimum": 1, "maximum": 16 },
@@ -95,6 +222,158 @@
   },
   "$defs": {
     "proportion": { "type": "number", "minimum": 0, "maximum": 1 },
+    "assetInsets": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "leftPx": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "topPx": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "rightPx": { "type": "integer", "minimum": 0, "maximum": 4096 },
+        "bottomPx": { "type": "integer", "minimum": 0, "maximum": 4096 }
+      }
+    },
+    "assetRenderSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["stretch", "fit", "crop", "nineSlice"],
+          "default": "stretch"
+        },
+        "insets": { "$ref": "#/$defs/assetInsets" },
+        "cornerScale": {
+          "type": "number",
+          "minimum": 0.1,
+          "maximum": 4,
+          "default": 1
+        }
+      }
+    },
+    "keyContentSpec": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "iconMode": {
+          "type": ["string", "null"],
+          "enum": ["overlay", "embedded", "hidden", null]
+        },
+        "centerX": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.5 },
+        "centerY": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.5 },
+        "iconWidth": {
+          "type": ["number", "null"],
+          "minimum": 0.05,
+          "maximum": 1
+        },
+        "iconHeight": {
+          "type": ["number", "null"],
+          "minimum": 0.05,
+          "maximum": 1
+        }
+      }
+    },
+    "normalizedRect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["left", "top", "right", "bottom"],
+      "properties": {
+        "left": { "type": "number", "minimum": 0, "maximum": 1 },
+        "top": { "type": "number", "minimum": 0, "maximum": 1 },
+        "right": { "type": "number", "minimum": 0, "maximum": 1 },
+        "bottom": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+    "spriteAtlas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset", "columns", "rows"],
+      "properties": {
+        "asset": { "type": "string", "pattern": "^animation\\.[a-z0-9_.-]+$" },
+        "columns": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "rows": { "type": "integer", "minimum": 1, "maximum": 32 },
+        "frameCount": { "type": ["integer", "null"], "minimum": 1, "maximum": 120 }
+      }
+    },
+    "motionScript": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["asset"],
+      "properties": {
+        "asset": { "type": "string", "pattern": "^animation\\.[a-z0-9_.-]+$" },
+        "apiVersion": { "type": "integer", "const": 1, "default": 1 },
+        "memoryLimitKb": {
+          "type": "integer",
+          "minimum": 512,
+          "maximum": 4096,
+          "default": 2048
+        },
+        "frameTimeLimitMs": {
+          "type": "number",
+          "minimum": 0.25,
+          "maximum": 4,
+          "default": 2
+        },
+        "maxDrawCommandsPerFrame": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256,
+          "default": 128
+        }
+      }
+    },
+    "toolbarRenderer": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "heightDp": { "$ref": "#/$defs/nullableToolbarHeight" },
+        "startWidthDp": { "$ref": "#/$defs/nullableToolbarWidth" },
+        "endWidthDp": { "$ref": "#/$defs/nullableToolbarWidth" },
+        "keyWidthDp": { "$ref": "#/$defs/nullableToolbarWidth" },
+        "contentPaddingStartDp": { "$ref": "#/$defs/nullableToolbarPadding" },
+        "contentPaddingEndDp": { "$ref": "#/$defs/nullableToolbarPadding" },
+        "iconSizeDp": {
+          "type": ["number", "null"],
+          "minimum": 8,
+          "maximum": 64
+        },
+        "iconOffsetXDp": { "$ref": "#/$defs/toolbarOffset" },
+        "iconOffsetYDp": { "$ref": "#/$defs/toolbarOffset" },
+        "startArtworkOffsetXDp": { "$ref": "#/$defs/nullableToolbarOffset" },
+        "startArtworkOffsetYDp": { "$ref": "#/$defs/nullableToolbarOffset" },
+        "endArtworkOffsetXDp": { "$ref": "#/$defs/nullableToolbarOffset" },
+        "endArtworkOffsetYDp": { "$ref": "#/$defs/nullableToolbarOffset" }
+      }
+    },
+    "nullableToolbarHeight": {
+      "type": ["number", "null"],
+      "minimum": 24,
+      "maximum": 96
+    },
+    "nullableToolbarWidth": {
+      "type": ["number", "null"],
+      "minimum": 24,
+      "maximum": 160
+    },
+    "nullableToolbarPadding": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 64
+    },
+    "toolbarOffset": {
+      "type": "number",
+      "minimum": -48,
+      "maximum": 48,
+      "default": 0
+    },
+    "nullableToolbarOffset": {
+      "type": ["number", "null"],
+      "minimum": -48,
+      "maximum": 48
+    },
+    "requiredColor": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"
+    },
     "color": {
       "type": ["string", "null"],
       "pattern": "^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$"

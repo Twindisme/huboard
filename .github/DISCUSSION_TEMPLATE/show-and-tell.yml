@@ -1,0 +1,26 @@
+title: "[Theme] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share a huBoard theme you made. Only attach artwork and archives you are permitted to distribute.
+  - type: input
+    id: name
+    attributes:
+      label: Theme name
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Explain the theme, supported surfaces, and any special animation behavior.
+    validations:
+      required: true
+  - type: textarea
+    id: preview
+    attributes:
+      label: Preview and download
+      description: Add screenshots or a recording and attach the .hbtheme file or link its source.
+    validations:
+      required: true

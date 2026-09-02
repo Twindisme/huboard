@@ -19,6 +19,7 @@
     <!-- Provide audio and haptic feedback by ourselves based on the keyboard settings.
          We just need to ignore the system's audio and haptic feedback settings. -->
     <LinearLayout
+        android:id="@+id/clipboard_entry_content"
         android:layout_width="0dp"
         android:layout_weight="1"
         android:layout_height="wrap_content"

@@ -1,5 +1,4 @@
-HeliBoard on yksityisyyttä kunnioittava avoimen lähdekoodin näppäimistö, joka perustuu AOSP / OpenBoardiin.
-Ei käytä Internet-lupaa, joten on kokonaan ei-verkkotilassa.
+huBoard on yksityisyyttä kunnioittava avoimen lähdekoodin näppäimistö, joka perustuu AOSP / OpenBoardiin.
 
 Ominaisuudet:
 <ul>

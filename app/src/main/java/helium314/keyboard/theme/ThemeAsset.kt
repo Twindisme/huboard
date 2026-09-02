@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package helium314.keyboard.theme
 
+import java.util.Locale
+
 /** Stable asset keys used by visual theme manifests. */
 object ThemeAsset {
+    private val toolbarIcon = Regex("^toolbar\\.icon\\.[a-z0-9_]+$")
+
     const val KEY_NORMAL = "key.normal"
     const val KEY_PRESSED = "key.pressed"
     const val SPACE_NORMAL = "key.space.normal"
@@ -22,6 +26,9 @@ object ThemeAsset {
     const val ICON_ACTION = "icon.action"
     const val ICON_SPACE_GLYPH = "icon.space.glyph"
     const val ICON_SPACE_LANGUAGE = "icon.space.language"
+    const val ICON_SHIFT_OFF = "icon.shift.off"
+    const val ICON_SHIFT_ON = "icon.shift.on"
+    const val ICON_SHIFT_LOCKED = "icon.shift.locked"
 
     const val KEY_PREVIEW = "preview.background"
     const val KEYBOARD_BACKGROUND = "keyboard.background"
@@ -35,10 +42,16 @@ object ThemeAsset {
     const val TOOLBAR_SEARCH = "toolbar.icon.search"
     const val TOOLBAR_EMOJI = "toolbar.icon.emoji"
     const val TOOLBAR_EXPAND = "toolbar.icon.expand"
+    const val THEME_THUMBNAIL = "theme.thumbnail"
 
     const val CLIPBOARD_SUGGESTION_BACKGROUND = "clipboard.suggestion.background"
     const val CLIPBOARD_PASTE = "clipboard.icon.paste"
     const val CLIPBOARD_CLOSE = "clipboard.icon.close"
+    const val CLIPBOARD_ENTRY_NORMAL = "clipboard.entry.normal"
+    const val CLIPBOARD_ENTRY_PRESSED = "clipboard.entry.pressed"
+    const val CLIPBOARD_ENTRY_PINNED = "clipboard.entry.pinned"
+    const val CLIPBOARD_ENTRY_PINNED_PRESSED = "clipboard.entry.pinned.pressed"
+    const val CLIPBOARD_PIN = "clipboard.icon.pin"
     const val POPUP_PANEL_BACKGROUND = "popup.panel.background"
 
     val known: Set<String> = setOf(
@@ -60,6 +73,9 @@ object ThemeAsset {
         ICON_ACTION,
         ICON_SPACE_GLYPH,
         ICON_SPACE_LANGUAGE,
+        ICON_SHIFT_OFF,
+        ICON_SHIFT_ON,
+        ICON_SHIFT_LOCKED,
         KEY_PREVIEW,
         KEYBOARD_BACKGROUND,
         TOOLBAR_BACKGROUND,
@@ -71,9 +87,19 @@ object ThemeAsset {
         TOOLBAR_SEARCH,
         TOOLBAR_EMOJI,
         TOOLBAR_EXPAND,
+        THEME_THUMBNAIL,
         CLIPBOARD_SUGGESTION_BACKGROUND,
         CLIPBOARD_PASTE,
         CLIPBOARD_CLOSE,
+        CLIPBOARD_ENTRY_NORMAL,
+        CLIPBOARD_ENTRY_PRESSED,
+        CLIPBOARD_ENTRY_PINNED,
+        CLIPBOARD_ENTRY_PINNED_PRESSED,
+        CLIPBOARD_PIN,
         POPUP_PANEL_BACKGROUND,
     )
+
+    fun toolbarIcon(action: String): String = "toolbar.icon.${action.lowercase(Locale.US)}"
+
+    fun isKnown(asset: String): Boolean = asset in known || toolbarIcon.matches(asset)
 }

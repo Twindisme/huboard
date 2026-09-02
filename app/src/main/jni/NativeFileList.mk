@@ -17,6 +17,7 @@ LATIN_IME_JNI_SRC_FILES := \
     com_android_inputmethod_latin_BinaryDictionary.cpp \
     com_android_inputmethod_latin_BinaryDictionaryUtils.cpp \
     com_android_inputmethod_latin_DicTraverseSession.cpp \
+    visual_theme_motion_runtime.cpp \
     jni_common.cpp
 
 LATIN_IME_CORE_SRC_FILES := \

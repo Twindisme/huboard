@@ -1,5 +1,4 @@
-HeliBoard es un teclado de código abierto que respeta la privacidad, basado en AOSP / OpenBoard.
-No usa el permiso de internet, por lo que funciona sin conexión al 100%.
+huBoard es un teclado de código abierto que respeta la privacidad, basado en AOSP / OpenBoard.
 
 Características:
 <ul>

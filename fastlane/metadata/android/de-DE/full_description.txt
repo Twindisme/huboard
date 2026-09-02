@@ -1,5 +1,4 @@
-HeliBoard ist eine datenschutzbewusste quelloffene Tastatur, die auf AOSP / OpenBoard basiert.
-Verwendet keine Internetberechtigung und ist daher zu 100 % offline.
+huBoard ist eine datenschutzbewusste quelloffene Tastatur, die auf AOSP / OpenBoard basiert.
 
 Features:
 <ul>

@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "id": "nocturne_wisp",
+  "displayName": "Nocturne Wisp",
+  "author": "huBoard community",
+  "description": "A near-black theme illuminated by a single wandering blue-white wisp.",
+  "versionCode": 1,
+  "versionName": "1.0",
+  "minimumEngineVersion": 3,
+  "colors": {
+    "accent": "#91D8FF",
+    "background": "#06080C",
+    "keyBackground": "#0E1117",
+    "functionalKey": "#0A0D12",
+    "spaceBar": "#0B0E13",
+    "keyText": "#EDF3F8",
+    "keyHintText": "#778391",
+    "suggestionText": "#E4EBF2",
+    "spaceBarText": "#C9D3DC",
+    "gesture": "#91D8FF"
+  },
+  "appearance": {
+    "keyboardStyle": "Rounded",
+    "keyBorders": true,
+    "showMoreSuggestionsHint": false,
+    "clipboardSuggestionContentOffsetYDp": 0
+  },
+  "capabilities": {
+    "keys": true,
+    "keyPreview": true,
+    "keyPressAnimation": true,
+    "toolbar": true,
+    "clipboard": true,
+    "keyboardBackground": true
+  },
+  "assets": {
+    "theme.thumbnail": "file:assets/nocturne_thumbnail.svg",
+    "keyboard.background": "file:assets/nocturne_keyboard_background.svg",
+    "key.normal": "file:assets/nocturne_key_normal.svg",
+    "key.pressed": "file:assets/nocturne_key_pressed.svg",
+    "icon.backspace": "file:assets/nocturne_backspace.svg",
+    "icon.action": "file:assets/nocturne_action.svg",
+    "icon.space.glyph": "file:assets/nocturne_space.svg",
+    "icon.space.language": "file:assets/nocturne_globe.svg",
+    "icon.shift.off": "file:assets/nocturne_shift_off.svg",
+    "icon.shift.on": "file:assets/nocturne_shift_on.svg",
+    "icon.shift.locked": "file:assets/nocturne_shift_locked.svg",
+    "preview.background": "file:assets/nocturne_key_preview.svg",
+    "toolbar.background": "file:assets/nocturne_toolbar_background.svg",
+    "toolbar.start": "file:assets/nocturne_toolbar_emblem.svg",
+    "toolbar.start.pressed": "file:assets/nocturne_toolbar_emblem_pressed.svg",
+    "toolbar.end": "file:assets/nocturne_toolbar_end.svg",
+    "toolbar.icon.keyboard": "file:assets/nocturne_toolbar_keyboard.svg",
+    "toolbar.icon.cursor": "file:assets/nocturne_toolbar_cursor.svg",
+    "toolbar.icon.search": "file:assets/nocturne_toolbar_search.svg",
+    "toolbar.icon.emoji": "file:assets/nocturne_toolbar_emoji.svg",
+    "toolbar.icon.expand": "file:assets/nocturne_toolbar_expand.svg",
+    "clipboard.suggestion.background": "file:assets/nocturne_card_normal.svg",
+    "clipboard.icon.paste": "file:assets/nocturne_clipboard_paste.svg",
+    "clipboard.icon.close": "file:assets/nocturne_close.svg",
+    "clipboard.entry.normal": "file:assets/nocturne_card_normal.svg",
+    "clipboard.entry.pressed": "file:assets/nocturne_card_pressed.svg",
+    "clipboard.entry.pinned": "file:assets/nocturne_card_pinned.svg",
+    "clipboard.entry.pinned.pressed": "file:assets/nocturne_card_pinned_pressed.svg",
+    "clipboard.icon.pin": "file:assets/nocturne_pin.svg",
+    "popup.panel.background": "file:assets/nocturne_card_normal.svg",
+    "animation.wisp_script": "file:assets/nocturne_wisp.luau"
+  },
+  "rendering": {
+    "key.normal": {
+      "mode": "nineSlice",
+      "insets": { "leftPx": 28, "topPx": 28, "rightPx": 28, "bottomPx": 28 }
+    },
+    "key.pressed": {
+      "mode": "nineSlice",
+      "insets": { "leftPx": 28, "topPx": 28, "rightPx": 28, "bottomPx": 28 }
+    },
+    "clipboard.suggestion.background": {
+      "mode": "nineSlice",
+      "insets": { "leftPx": 32, "topPx": 32, "rightPx": 32, "bottomPx": 32 },
+      "cornerScale": 0.8
+    },
+    "popup.panel.background": {
+      "mode": "nineSlice",
+      "insets": { "leftPx": 32, "topPx": 32, "rightPx": 32, "bottomPx": 32 },
+      "cornerScale": 0.8
+    },
+    "toolbar.start": { "mode": "fit" },
+    "toolbar.start.pressed": { "mode": "fit" },
+    "toolbar.end": { "mode": "fit" },
+    "theme.thumbnail": { "mode": "crop" }
+  },
+  "keyRenderer": {
+    "horizontalOverscan": 0.025,
+    "verticalOverscan": 0.015,
+    "backspaceIconSize": 0.46,
+    "actionIconSize": 0.5,
+    "actionIconAspectRatio": 1.0,
+    "spaceLanguageIconSize": 0.18,
+    "spaceLanguageIconTop": 0.19,
+    "spaceGlyphWidth": 0.34,
+    "spaceGlyphTop": 0.64,
+    "iconGradientStart": "#F8FBFF",
+    "iconGradientEnd": "#91D8FF",
+    "content": {
+      "regular": { "centerY": 0.49 },
+      "shift": { "iconMode": "overlay", "iconWidth": 0.43, "iconHeight": 0.43 },
+      "delete": { "iconMode": "overlay", "iconWidth": 0.46, "iconHeight": 0.46 },
+      "action": { "iconMode": "overlay", "iconWidth": 0.5, "iconHeight": 0.5 }
+    }
+  },
+  "toolbarRenderer": {
+    "heightDp": 58,
+    "startWidthDp": 58,
+    "endWidthDp": 58,
+    "keyWidthDp": 50,
+    "contentPaddingStartDp": 3,
+    "contentPaddingEndDp": 3,
+    "iconSizeDp": 22,
+    "iconOffsetYDp": 0
+  },
+  "clipboardRenderer": {
+    "entryInsets": { "leftPx": 32, "topPx": 32, "rightPx": 32, "bottomPx": 32 },
+    "pinnedEntryInsets": { "leftPx": 32, "topPx": 32, "rightPx": 32, "bottomPx": 32 },
+    "entryCornerScale": 0.8,
+    "pinnedEntryCornerScale": 0.8,
+    "pinnedContentEndPaddingDp": 8
+  },
+  "keyPreview": {
+    "faceBounds": { "left": 0.1636, "top": 0.2667, "right": 0.8364, "bottom": 0.9333 },
+    "verticalOverscan": 0.02,
+    "gapDp": 2,
+    "textColor": "#F4F8FC"
+  },
+  "keyPressAnimation": {
+    "script": {
+      "asset": "animation.wisp_script",
+      "apiVersion": 1,
+      "memoryLimitKb": 2048,
+      "frameTimeLimitMs": 2.0,
+      "maxDrawCommandsPerFrame": 128
+    },
+    "durationMs": 3500,
+    "maxSimultaneousEffects": 8,
+    "characterKeysOnly": true
+  }
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="160" viewBox="0 0 400 160">
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#263C4B"/>
+      <stop offset="1" stop-color="#101923"/>
+    </linearGradient>
+    <radialGradient id="mark" cx="94%" cy="12%" r="28%">
+      <stop offset="0" stop-color="#DDF6FF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#91D8FF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="5" y="5" width="390" height="150" rx="24" fill="#5AC8FF" fill-opacity="0.08"/>
+  <rect x="8" y="8" width="384" height="144" rx="21" fill="url(#card)" stroke="#91D8FF" stroke-opacity="0.74" stroke-width="3"/>
+  <rect x="8" y="8" width="384" height="144" rx="21" fill="url(#mark)"/>
+  <circle cx="370" cy="26" r="5" fill="#FFFFFF"/>
+</svg>

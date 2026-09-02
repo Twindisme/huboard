@@ -33,6 +33,7 @@ import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.InputTypeUtils
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.ToolbarKey
+import helium314.keyboard.latin.utils.dpToPx
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.theme.ThemeAsset
 import helium314.keyboard.theme.VisualThemeManager
@@ -140,11 +141,11 @@ class ClipboardHistoryManager(
         removeClipboardSuggestion()
     }
 
-    fun canRemove(index: Int) = clipboardDao?.isPinned(index) == false
+    fun canRemove(id: Long) = clipboardDao?.isPinned(id) == false
 
-    fun removeEntry(index: Int) {
-        if (canRemove(index))
-            clipboardDao?.deleteClipAt(index)
+    fun removeEntry(id: Long) {
+        if (canRemove(id))
+            clipboardDao?.deleteClip(id)
     }
 
     fun sortHistoryEntries() {
@@ -155,9 +156,7 @@ class ClipboardHistoryManager(
     // when history is about to be shown
     fun prepareClipboardHistory() = clipboardDao?.clearOldClips(true)
 
-    fun getHistorySize() = clipboardDao?.count() ?: 0
-
-    fun getHistoryEntry(position: Int) = clipboardDao?.getAt(position)
+    fun getHistoryEntries() = clipboardDao?.getAll().orEmpty()
 
     fun getHistoryEntryContent(id: Long) = clipboardDao?.get(id)
 
@@ -198,6 +197,12 @@ class ClipboardHistoryManager(
                 latinIME,
                 ThemeAsset.CLIPBOARD_SUGGESTION_BACKGROUND,
             )
+            val contentTranslationY = visualTheme.clipboardSuggestionContentOffsetYDp
+                .dpToPx(latinIME.resources)
+                .toFloat()
+            for (index in 0 until binding.root.childCount) {
+                binding.root.getChildAt(index).translationY = contentTranslationY
+            }
         } else {
             colors.setBackground(binding.root, ColorType.STRIP_BACKGROUND)
         }

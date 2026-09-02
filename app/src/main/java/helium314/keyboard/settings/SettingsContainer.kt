@@ -85,6 +85,7 @@ object SettingsWithoutKey {
     const val BACKGROUND_IMAGE_LANDSCAPE = "background_image_landscape"
     const val IMPORT_VISUAL_THEME = "import_visual_theme"
     const val REMOVE_VISUAL_THEME = "remove_visual_theme"
+    const val VISUAL_THEME_BROWSER = "visual_theme_browser"
     const val CUSTOM_FONT = "custom_font"
     const val CUSTOM_EMOJI_FONT = "custom_emoji_font"
 }

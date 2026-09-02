@@ -14,6 +14,33 @@
 
 LOCAL_PATH := $(call my-dir)
 
+######################################
+# Sandboxed visual-theme motion scripts. Luau is vendored so theme execution
+# does not depend on a platform JavaScript engine or a network download.
+include $(CLEAR_VARS)
+
+LUAU_DIR := third_party/luau
+LUAU_SOURCE_DIRS := Common/src Ast/src Bytecode/src Compiler/src VM/src
+LUAU_SRC_FILES := $(foreach dir,$(LUAU_SOURCE_DIRS), \
+    $(patsubst $(LOCAL_PATH)/%,%,$(wildcard $(LOCAL_PATH)/$(LUAU_DIR)/$(dir)/*.cpp)))
+
+LOCAL_MODULE := libluau_huboard
+LOCAL_SRC_FILES := $(LUAU_SRC_FILES)
+LOCAL_C_INCLUDES := \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Common/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Ast/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Bytecode/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Compiler/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/VM/include
+LOCAL_CPPFLAGS += -std=c++17 -DLUA_USE_LONGJMP=1 \
+    -Wno-unused-parameter -Wno-unused-function
+LOCAL_CPP_FEATURES := exceptions
+LOCAL_CLANG := true
+LOCAL_SDK_VERSION := 21
+LOCAL_NDK_STL_VARIANT := c++_static
+
+include $(BUILD_STATIC_LIBRARY)
+
 ############ some local flags
 # If you change any of those flags, you need to rebuild both libjni_latinime_common_static
 # and the shared library that uses libjni_latinime_common_static.
@@ -26,6 +53,11 @@ include $(CLEAR_VARS)
 LATIN_IME_SRC_DIR := src
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/$(LATIN_IME_SRC_DIR)
+LOCAL_C_INCLUDES += \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Common/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Bytecode/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/Compiler/include \
+    $(LOCAL_PATH)/$(LUAU_DIR)/VM/include
 
 LOCAL_CFLAGS += -Wall -Wextra -Weffc++ -Wformat=2 -Wcast-qual -Wcast-align \
     -Wwrite-strings -Wfloat-equal -Wpointer-arith -Winit-self -Wredundant-decls \
@@ -73,6 +105,7 @@ include $(CLEAR_VARS)
 
 # All code in LOCAL_WHOLE_STATIC_LIBRARIES will be built into this shared library.
 LOCAL_WHOLE_STATIC_LIBRARIES := libjni_latinime_common_static
+LOCAL_STATIC_LIBRARIES := libluau_huboard
 
 ifeq ($(FLAG_DO_PROFILE), true)
     $(warning Making profiling version of native library)

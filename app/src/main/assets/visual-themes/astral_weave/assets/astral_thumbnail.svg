@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480">
+  <defs>
+    <linearGradient id="night" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111936"/>
+      <stop offset="0.58" stop-color="#070A19"/>
+      <stop offset="1" stop-color="#03040B"/>
+    </linearGradient>
+    <radialGradient id="nebula" cx="70%" cy="20%" r="62%">
+      <stop offset="0" stop-color="#7957D6" stop-opacity="0.24"/>
+      <stop offset="0.5" stop-color="#305AA0" stop-opacity="0.09"/>
+      <stop offset="1" stop-color="#17203D" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="star">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.22" stop-color="#C8E8FF" stop-opacity="0.88"/>
+      <stop offset="0.58" stop-color="#87BFFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#87BFFF" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="720" height="480" fill="url(#night)"/>
+  <rect width="720" height="480" fill="url(#nebula)"/>
+  <g fill="none" stroke="#CFE5FF" stroke-linecap="round">
+    <path d="M106 323 L213 230 L337 286 L446 147 L594 218" stroke-opacity="0.48" stroke-width="2.2"/>
+    <path d="M213 230 L276 105 L446 147" stroke-opacity="0.32" stroke-width="1.6"/>
+    <path d="M337 286 L487 347 L594 218" stroke-opacity="0.28" stroke-width="1.5"/>
+  </g>
+  <g>
+    <circle cx="106" cy="323" r="36" fill="url(#star)"/><circle cx="106" cy="323" r="3.8" fill="#FFFFFF"/>
+    <circle cx="213" cy="230" r="52" fill="url(#star)"/><circle cx="213" cy="230" r="5" fill="#FFFFFF"/>
+    <circle cx="276" cy="105" r="28" fill="url(#star)"/><circle cx="276" cy="105" r="3" fill="#D9CFFF"/>
+    <circle cx="337" cy="286" r="40" fill="url(#star)"/><circle cx="337" cy="286" r="4" fill="#FFFFFF"/>
+    <circle cx="446" cy="147" r="62" fill="url(#star)"/><circle cx="446" cy="147" r="6" fill="#FFFFFF"/>
+    <circle cx="487" cy="347" r="30" fill="url(#star)"/><circle cx="487" cy="347" r="3" fill="#BDE3FF"/>
+    <circle cx="594" cy="218" r="45" fill="url(#star)"/><circle cx="594" cy="218" r="4.5" fill="#FFFFFF"/>
+  </g>
+  <g fill="#D8EBFF">
+    <circle cx="58" cy="81" r="1.5" fill-opacity="0.45"/>
+    <circle cx="152" cy="128" r="1" fill-opacity="0.3"/>
+    <circle cx="351" cy="62" r="1.4" fill-opacity="0.35"/>
+    <circle cx="638" cy="91" r="1.2" fill-opacity="0.35"/>
+    <circle cx="661" cy="366" r="1.6" fill-opacity="0.32"/>
+    <circle cx="244" cy="401" r="1.2" fill-opacity="0.3"/>
+  </g>
+</svg>

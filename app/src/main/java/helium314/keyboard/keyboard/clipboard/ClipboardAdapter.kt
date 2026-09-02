@@ -10,30 +10,36 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import helium314.keyboard.latin.ClipboardHistoryEntry
-import helium314.keyboard.latin.ClipboardHistoryManager
 import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.ColorType
 import helium314.keyboard.latin.settings.Settings
+import helium314.keyboard.theme.VisualThemeClipboardStyler
 
 class ClipboardAdapter(
-       val clipboardLayoutParams: ClipboardLayoutParams,
-       val keyEventListener: OnKeyEventListener
-) : RecyclerView.Adapter<ClipboardAdapter.ViewHolder>() {
-
-    var clipboardHistoryManager: ClipboardHistoryManager? = null
+    private val clipboardLayoutParams: ClipboardLayoutParams,
+    private val keyEventListener: OnKeyEventListener,
+) : ListAdapter<ClipboardHistoryEntry, ClipboardAdapter.ViewHolder>(DIFF_CALLBACK) {
 
     var pinnedIconResId = 0
     var itemBackgroundId = 0
     var itemTypeFace: Typeface? = null
     var itemTextColor = 0
     var itemTextSize = 0f
+    var themedEntryStyle: VisualThemeClipboardStyler.EntryStyle? = null
+
+    init {
+        setHasStableIds(true)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.clipboard_entry_key, parent, false)
+            .inflate(R.layout.clipboard_entry_key, parent, false)
         return ViewHolder(view)
     }
 
@@ -41,15 +47,13 @@ class ClipboardAdapter(
         holder.setContent(getItem(position))
     }
 
-    private fun getItem(position: Int) = clipboardHistoryManager?.getHistoryEntry(position)
+    override fun getItemId(position: Int) = getItem(position).id
 
-    override fun getItemCount() = clipboardHistoryManager?.getHistorySize() ?: 0
-
-    inner class ViewHolder(
-            view: View
-    ) : RecyclerView.ViewHolder(view), View.OnClickListener, View.OnTouchListener, View.OnLongClickListener {
+    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view),
+        View.OnClickListener, View.OnTouchListener, View.OnLongClickListener {
 
         private val pinnedIconView: ImageView
+        private val contentView: LinearLayout
         private val contentTextView: TextView
         private val contentImageView: ImageView
 
@@ -58,14 +62,20 @@ class ClipboardAdapter(
                 setOnClickListener(this@ViewHolder)
                 setOnTouchListener(this@ViewHolder)
                 setOnLongClickListener(this@ViewHolder)
-                setBackgroundResource(itemBackgroundId)
+                if (themedEntryStyle == null) setBackgroundResource(itemBackgroundId)
                 isHapticFeedbackEnabled = false
             }
-            Settings.getValues().mColors.setBackground(view, ColorType.KEY_BACKGROUND)
+            if (themedEntryStyle == null) {
+                Settings.getValues().mColors.setBackground(view, ColorType.KEY_BACKGROUND)
+            }
             pinnedIconView = view.findViewById<ImageView>(R.id.clipboard_entry_pinned_icon).apply {
                 visibility = View.GONE
-                setImageResource(pinnedIconResId)
+                themedEntryStyle?.pinIcon()?.let {
+                    setImageDrawable(it)
+                    clearColorFilter()
+                } ?: setImageResource(pinnedIconResId)
             }
+            contentView = view.findViewById(R.id.clipboard_entry_content)
             contentTextView = view.findViewById<TextView>(R.id.clipboard_entry_text_content).apply {
                 typeface = itemTypeFace
                 setTextColor(itemTextColor)
@@ -73,17 +83,28 @@ class ClipboardAdapter(
             }
             contentImageView = view.findViewById(R.id.clipboard_entry_image_content)
             clipboardLayoutParams.setItemProperties(view)
-            val colors = Settings.getValues().mColors
-            colors.setColor(pinnedIconView, ColorType.CLIPBOARD_PIN)
+            if (themedEntryStyle == null) {
+                Settings.getValues().mColors.setColor(pinnedIconView, ColorType.CLIPBOARD_PIN)
+            }
         }
 
-        fun setContent(historyEntry: ClipboardHistoryEntry?) {
-            if (historyEntry == null) return
+        fun setContent(historyEntry: ClipboardHistoryEntry) {
             itemView.tag = historyEntry.id
+            themedEntryStyle?.let { style ->
+                itemView.background = style.background(historyEntry.isPinned)
+                contentView.setPaddingRelative(
+                    contentView.paddingStart,
+                    contentView.paddingTop,
+                    if (historyEntry.isPinned) style.pinnedContentEndPadding else 0,
+                    contentView.paddingBottom,
+                )
+            }
+            contentTextView.text = null
+            contentImageView.setImageDrawable(null)
             if (historyEntry.filename != null) {
                 historyEntry.setImageAndDescription(contentImageView, contentTextView)
             } else {
-                contentTextView.text = historyEntry.text?.take(1000) // truncate displayed text for performance reasons
+                contentTextView.text = historyEntry.text?.take(1000)
             }
             pinnedIconView.visibility = if (historyEntry.isPinned) View.VISIBLE else View.GONE
             contentImageView.visibility = if (historyEntry.filename != null) View.VISIBLE else View.GONE
@@ -103,8 +124,22 @@ class ClipboardAdapter(
         }
 
         override fun onLongClick(view: View): Boolean {
-            clipboardHistoryManager?.toggleClipPinned(view.tag as Long)
+            keyEventListener.onTogglePinned(view.tag as Long)
             return true
+        }
+    }
+
+    private companion object {
+        val DIFF_CALLBACK = object : DiffUtil.ItemCallback<ClipboardHistoryEntry>() {
+            override fun areItemsTheSame(
+                oldItem: ClipboardHistoryEntry,
+                newItem: ClipboardHistoryEntry,
+            ) = oldItem.id == newItem.id
+
+            override fun areContentsTheSame(
+                oldItem: ClipboardHistoryEntry,
+                newItem: ClipboardHistoryEntry,
+            ) = oldItem == newItem
         }
     }
 }

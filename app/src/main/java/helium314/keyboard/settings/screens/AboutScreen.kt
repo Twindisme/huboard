@@ -27,6 +27,7 @@ import helium314.keyboard.latin.R
 import helium314.keyboard.latin.common.Links
 import helium314.keyboard.latin.settings.DebugSettings
 import helium314.keyboard.latin.settings.Defaults
+import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.Log
 import helium314.keyboard.latin.utils.SpannableStringUtils
 import helium314.keyboard.latin.utils.getActivity
@@ -35,9 +36,11 @@ import helium314.keyboard.settings.SettingsContainer
 import helium314.keyboard.settings.SettingsWithoutKey
 import helium314.keyboard.settings.Setting
 import helium314.keyboard.settings.preferences.Preference
+import helium314.keyboard.settings.preferences.SwitchPreference
 import helium314.keyboard.settings.SearchSettingsScreen
 import helium314.keyboard.settings.SettingsActivity
-import helium314.keyboard.updates.HuTaoUpdateActivity
+import helium314.keyboard.updates.AppUpdater
+import helium314.keyboard.updates.UpdateActivity
 import helium314.keyboard.latin.utils.Theme
 import helium314.keyboard.latin.utils.previewDark
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +57,7 @@ fun AboutScreen(
     val items = listOf(
         SettingsWithoutKey.APP,
         SettingsWithoutKey.VERSION,
+        Settings.PREF_AUTOMATIC_UPDATE_CHECKS,
         SettingsWithoutKey.CHECK_FOR_UPDATES,
         SettingsWithoutKey.LICENSE,
         SettingsWithoutKey.HIDDEN_FEATURES,
@@ -98,16 +102,35 @@ fun createAboutSettings(context: Context) = listOf(
     },
     Setting(
         context,
+        Settings.PREF_AUTOMATIC_UPDATE_CHECKS,
+        R.string.app_automatic_update_checks,
+        R.string.app_automatic_update_checks_description,
+    ) { setting ->
+        val ctx = LocalContext.current
+        SwitchPreference(
+            setting = setting,
+            default = Defaults.PREF_AUTOMATIC_UPDATE_CHECKS,
+            onCheckedChange = { enabled ->
+                if (enabled) {
+                    (ctx.getActivity() as? SettingsActivity)?.requestUpdateNotificationPermission()
+                } else {
+                    AppUpdater.cancelUpdateNotification(ctx)
+                }
+            },
+        )
+    },
+    Setting(
+        context,
         SettingsWithoutKey.CHECK_FOR_UPDATES,
-        R.string.hu_tao_check_for_updates,
-        R.string.hu_tao_check_for_updates_description,
+        R.string.app_check_for_updates,
+        R.string.app_check_for_updates_description,
     ) {
         val ctx = LocalContext.current
         Preference(
             name = it.title,
             description = it.description,
-            onClick = { ctx.startActivity(HuTaoUpdateActivity.createCheckIntent(ctx)) },
-            icon = R.drawable.hu_tao_update_notification,
+            onClick = { ctx.startActivity(UpdateActivity.createCheckIntent(ctx)) },
+            icon = R.drawable.ic_update_available,
         )
     },
     Setting(context, SettingsWithoutKey.LICENSE, R.string.license, R.string.gnu_gpl) {

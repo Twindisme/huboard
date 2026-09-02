@@ -31,6 +31,7 @@ import helium314.keyboard.latin.RichInputMethodManager;
 import helium314.keyboard.latin.common.Constants;
 import helium314.keyboard.latin.common.CoordinateUtils;
 import helium314.keyboard.theme.ResolvedVisualTheme;
+import helium314.keyboard.theme.ThemeAsset;
 import helium314.keyboard.theme.VisualThemeManager;
 
 /**
@@ -43,6 +44,8 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     private final Drawable mDivider;
     @Nullable
     private final VisualThemeKeyRenderer mVisualThemeKeyRenderer;
+    @Nullable
+    private final Drawable mVisualThemePopupBackground;
     protected final KeyDetector mKeyDetector;
     private Controller mController = EMPTY_CONTROLLER;
     protected KeyboardActionListener mListener;
@@ -65,6 +68,8 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
         final ResolvedVisualTheme visualTheme = VisualThemeManager.activeTheme(context);
         mVisualThemeKeyRenderer = visualTheme.getHasCustomKeys()
                 ? new VisualThemeKeyRenderer(context, visualTheme, true) : null;
+        mVisualThemePopupBackground = visualTheme.drawable(
+                context, ThemeAsset.POPUP_PANEL_BACKGROUND);
         final TypedArray popupKeysKeyboardViewAttr = context.obtainStyledAttributes(attrs,
                 R.styleable.PopupKeysKeyboardView, defStyle, R.style.PopupKeysKeyboardView);
         mDivider = popupKeysKeyboardViewAttr.getDrawable(R.styleable.PopupKeysKeyboardView_divider);
@@ -88,18 +93,26 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     @Override
     protected void onDrawKeyTopVisuals(@NonNull final Key key, @NonNull final Canvas canvas,
             @NonNull final Paint paint, @NonNull final KeyDrawParams params) {
-        if (!key.isSpacer() || !(key instanceof PopupKeysKeyboard.PopupKeyDivider)
-                || mDivider == null) {
-            super.onDrawKeyTopVisuals(key, canvas, paint, params);
-            return;
+        final int saved = canvas.save();
+        try {
+            if (mVisualThemeKeyRenderer != null) {
+                mVisualThemeKeyRenderer.translateTopContent(key, canvas);
+            }
+            if (!key.isSpacer() || !(key instanceof PopupKeysKeyboard.PopupKeyDivider)
+                    || mDivider == null) {
+                super.onDrawKeyTopVisuals(key, canvas, paint, params);
+                return;
+            }
+            final int keyWidth = key.getDrawWidth();
+            final int keyHeight = key.getHeight();
+            final int iconWidth = Math.min(mDivider.getIntrinsicWidth(), keyWidth);
+            final int iconHeight = mDivider.getIntrinsicHeight();
+            final int iconX = (keyWidth - iconWidth) / 2; // Align horizontally center
+            final int iconY = (keyHeight - iconHeight) / 2; // Align vertically center
+            drawIcon(canvas, mDivider, iconX, iconY, iconWidth, iconHeight);
+        } finally {
+            canvas.restoreToCount(saved);
         }
-        final int keyWidth = key.getDrawWidth();
-        final int keyHeight = key.getHeight();
-        final int iconWidth = Math.min(mDivider.getIntrinsicWidth(), keyWidth);
-        final int iconHeight = mDivider.getIntrinsicHeight();
-        final int iconX = (keyWidth - iconWidth) / 2; // Align horizontally center
-        final int iconY = (keyHeight - iconHeight) / 2; // Align vertically center
-        drawIcon(canvas, mDivider, iconX, iconY, iconWidth, iconHeight);
     }
 
     @Override
@@ -115,9 +128,9 @@ public class PopupKeysKeyboardView extends KeyboardView implements PopupKeysPane
     @Override
     public void setKeyboard(@NonNull final Keyboard keyboard) {
         super.setKeyboard(keyboard);
-        // Decorated popup keys float without an additional rectangular panel.
+        // A theme may either provide a scalable panel or deliberately let decorated keys float.
         if (mVisualThemeKeyRenderer != null) {
-            setBackground(null);
+            setBackground(mVisualThemePopupBackground);
         }
         mKeyDetector.setKeyboard(
                 keyboard, -getPaddingLeft(), -getPaddingTop() + getVerticalCorrection());
