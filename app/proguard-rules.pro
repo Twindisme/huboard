@@ -12,3 +12,6 @@
 # after upgrading to gradle 8, stack traces contain "unknown source"
 -keepattributes SourceFile,LineNumberTable
 -dontobfuscate
+
+# Okio uses this compile-time-only annotation, which is not packaged at runtime.
+-dontwarn javax.annotation.Nullable
