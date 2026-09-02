@@ -15,6 +15,7 @@ import androidx.core.content.edit
 import helium314.keyboard.keyboard.KeyboardSwitcher
 import helium314.keyboard.keyboard.internal.KeyboardIconsSet
 import helium314.keyboard.latin.R
+import helium314.keyboard.latin.settings.Defaults
 import helium314.keyboard.latin.settings.Settings
 import helium314.keyboard.latin.utils.prefs
 import helium314.keyboard.settings.Setting
@@ -44,7 +45,10 @@ fun VisualThemeDeletePreference(setting: Setting) {
                 if (VisualThemePackInstaller.uninstall(context, theme.id)) {
                     if (context.prefs().getString(Settings.PREF_VISUAL_THEME_PACK, null) == theme.id) {
                         context.prefs().edit {
-                            putString(Settings.PREF_VISUAL_THEME_PACK, "classic")
+                            putString(
+                                Settings.PREF_VISUAL_THEME_PACK,
+                                Defaults.PREF_VISUAL_THEME_PACK,
+                            )
                         }
                     }
                     installedThemes = VisualThemeManager.availableThemes(context)
