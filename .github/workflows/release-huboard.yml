@@ -49,8 +49,11 @@ jobs:
       - name: Build signed release APK
         run: ./gradlew :app:assembleRelease --stacktrace
 
-      - name: Package example theme
-        run: tools/package-hbtheme.sh app/src/main/assets/visual-themes/hu_tao hu_tao.hbtheme
+      - name: Package downloadable themes
+        run: |
+          tools/package-hbtheme.sh app/src/main/assets/visual-themes/hu_tao hu_tao.hbtheme
+          tools/package-hbtheme.sh themes/ayaka ayaka.hbtheme
+          tools/package-hbtheme.sh themes/xiangling xiangling.hbtheme
 
       - name: Verify and checksum APK
         id: apk
@@ -87,9 +90,9 @@ jobs:
           set -eu
           cp "$APK" huBoard-latest.apk
           if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" "$APK" "$APK.sha256" huBoard-latest.apk update.json hu_tao.hbtheme --clobber
+            gh release upload "$GITHUB_REF_NAME" "$APK" "$APK.sha256" huBoard-latest.apk update.json hu_tao.hbtheme ayaka.hbtheme xiangling.hbtheme --clobber
           else
-            gh release create "$GITHUB_REF_NAME" "$APK" "$APK.sha256" huBoard-latest.apk update.json hu_tao.hbtheme \
+            gh release create "$GITHUB_REF_NAME" "$APK" "$APK.sha256" huBoard-latest.apk update.json hu_tao.hbtheme ayaka.hbtheme xiangling.hbtheme \
               --verify-tag \
               --generate-notes \
               --title "huBoard ${GITHUB_REF_NAME#v}"

@@ -45,8 +45,8 @@ and missing assets. SVGs and Lottie files are restricted to safe, local content.
 scripts execute in an isolated, resource-limited runtime with no Android, network, filesystem,
 clipboard, microphone, or typed-text access.
 
-The bundled Hu Tao directory is a complete example and is also attached to releases as
-`hu_tao.hbtheme`. See the [theme authoring guide](docs/theme-packs/README.md),
+The bundled Hu Tao directory is a complete example. Releases include ready-to-import Hu Tao,
+Ayaka, and Xiangling `.hbtheme` packs. See the [theme authoring guide](docs/theme-packs/README.md),
 [manifest schema](docs/theme-packs/manifest.schema.json), and
 [huBoard Motion API](docs/theme-packs/motion-api.md). Package a theme with:
 

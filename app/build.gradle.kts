@@ -35,8 +35,8 @@ android {
         applicationId = "helium314.keyboard.huboard"
         minSdk = 21
         targetSdk = 36
-        versionCode = 400508
-        versionName = "4.0-huboard.1"
+        versionCode = 400509
+        versionName = "4.0-huboard.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk {
             abiFilters.clear()

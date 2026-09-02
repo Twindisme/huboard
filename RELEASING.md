@@ -28,4 +28,4 @@ APK's `versionName`. Do not push the repository's inherited historical tags.
 
 The workflow verifies the APK signature, publishes the versioned APK and checksum, maintains the
 stable `huBoard-latest.apk` asset, creates `update.json` for the in-app updater, and attaches the Hu
-Tao example pack as `hu_tao.hbtheme`.
+Tao, Ayaka, and Xiangling theme packs.
